@@ -122,7 +122,7 @@ html,body,#root{min-height:100vh;background:var(--bg);color:var(--t1);font-famil
 <script>
 const {useState,createElement:h}=React;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
- 
+
 // ─── Vercelプロキシ経由でWordPressのAPIを叩く ────────
 // CORSを完全回避。ブラウザ→Vercel→WordPress の中継構造
 async function wpRequest(siteUrl, apiKey, path, method='GET', body=null){
@@ -136,58 +136,58 @@ async function wpRequest(siteUrl, apiKey, path, method='GET', body=null){
   }
   return res.json();
 }
- 
+
 // ─── AIリスク分析 ─────────────────────────────────────
 async function analyzeRisk(plugin, themeFiles){
   const fileContents = (themeFiles||[]).map(f=>`// === ${f.name} ===\n${f.content}`).join('\n\n');
   const prompt=`WordPressカスタムテーマのPHPファイルを分析し、以下のプラグインアップデートのリスクを評価してください。
- 
+
 【更新対象】${plugin.name}  ${plugin.current} → ${plugin.latest}
- 
+
 【テーマPHPファイル】
 \`\`\`php
 ${fileContents.slice(0,12000)||'（テーマファイルを取得できませんでした）'}
 \`\`\`
- 
+
 回答形式（厳守）：
 1行目：RISK:高 または RISK:中 または RISK:低 のみ
 2行目以降：テーマが使用している${plugin.name}のフック・関数名、衝突リスク、修正が必要なコード箇所、推奨アクションを日本語で記述してください。`;
- 
+
   const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
   const json=await res.json();
   const text=json.content?.[0]?.text||'分析の取得に失敗しました';
   const m=text.match(/RISK:(高|中|低)/);
   return{riskLevel:m?m[1]:'中',analysis:text.replace(/^RISK:(高|中|低)\n?/,'').trim()};
 }
- 
+
 async function analyzeAllRisks(plugins, wpUpdate, themeFiles){
   const fileContents=(themeFiles||[]).map(f=>`// === ${f.name} ===\n${f.content}`).join('\n\n');
   const lines=[];
   if(wpUpdate) lines.push(`WordPress本体: ${wpUpdate.current} → ${wpUpdate.latest}`);
   plugins.forEach(p=>lines.push(`${p.name}: ${p.current} → ${p.latest}`));
   const prompt=`WordPressカスタムテーマのPHPファイルを分析し、以下の全アップデートを一括実行する場合の総合リスクを評価してください。
- 
+
 【更新対象】\n${lines.map(l=>'- '+l).join('\n')}
- 
+
 【テーマPHPファイル】
 \`\`\`php
 ${fileContents.slice(0,12000)||'（テーマファイルを取得できませんでした）'}
 \`\`\`
- 
+
 回答形式（厳守）：
 1行目：RISK:高 または RISK:中 または RISK:低 のみ（総合評価）
 2行目以降：各更新とテーマの衝突リスクを箇条書き、推奨更新順序を日本語で記述してください。`;
- 
+
   const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
   const json=await res.json();
   const text=json.content?.[0]?.text||'分析の取得に失敗しました';
   const m=text.match(/RISK:(高|中|低)/);
   return{riskLevel:m?m[1]:'中',analysis:text.replace(/^RISK:(高|中|低)\n?/,'').trim()};
 }
- 
+
 // ─── UI コンポーネント ────────────────────────────────
 const SCAN_STEPS=["サイトへ接続中...","WordPress バージョンを確認中...","PHP バージョンを確認中...","プラグイン一覧を取得中...","最新バージョンを照合中...","テーマファイルを読み込み中...","レポートを生成中..."];
- 
+
 function Setup({form,setForm,onStart,error}){
   return h('div',{className:'setup'},
     h('div',{className:'setup-card'},
@@ -209,7 +209,7 @@ function Setup({form,setForm,onStart,error}){
     )
   );
 }
- 
+
 function Scanning({log}){
   return h('div',{className:'scanning'},
     h('div',{className:'scan-heading'},'サイトをスキャン中...'),
@@ -221,7 +221,7 @@ function Scanning({log}){
     )
   );
 }
- 
+
 function RiskModal({modal,onCancel}){
   if(!modal) return null;
   const isH=modal.riskLevel==='高',isL=modal.riskLevel==='低';
@@ -260,10 +260,10 @@ function RiskModal({modal,onCancel}){
     )
   );
 }
- 
+
 const scoreColor=s=>s>=80?'var(--green)':s>=55?'var(--amber)':'var(--red)';
 const scoreLabel=s=>s>=80?'良好':s>=55?'要対応':'緊急';
- 
+
 function HealthScore({score}){
   const c=scoreColor(score);
   return h('div',{className:'score-bar'},
@@ -272,7 +272,7 @@ function HealthScore({score}){
     h('div',{className:'score-label'},'健康スコア ',h('strong',{style:{color:c}},scoreLabel(score)))
   );
 }
- 
+
 function WpCard({data,state,onInitiate}){
   const need=data.wordpress.updateAvailable&&state!=='done';
   const c=need?'var(--amber)':'var(--green)';
@@ -285,7 +285,7 @@ function WpCard({data,state,onInitiate}){
     need&&h('button',{className:`scard-btn ${state!=='idle'?state:''}`,onClick:onInitiate,disabled:state!=='idle'},lbl)
   );
 }
- 
+
 function PhpCard({data}){
   const eol=data.php.status==='eol';
   return h('div',{className:'scard',style:{'--c':eol?'var(--red)':'var(--green)'}},
@@ -296,7 +296,7 @@ function PhpCard({data}){
     eol&&h('div',{style:{marginTop:10,fontSize:11,color:'var(--red)',lineHeight:1.6}},'PHP 7.4 は 2022年11月にサポート終了済みです。サーバー管理者にアップグレードを依頼してください。')
   );
 }
- 
+
 function PluginsCard({data}){
   const p=data.plugins.filter(x=>x.updateAvailable).length;
   const c=p===0?'var(--green)':p<=2?'var(--amber)':'var(--red)';
@@ -307,7 +307,7 @@ function PluginsCard({data}){
     p===0?h('span',{className:'badge green'},'✓ すべて最新'):h('span',{className:'badge red'},`${p}件 要更新`)
   );
 }
- 
+
 function PluginRow({plugin,state,onInitiate}){
   const isActive=plugin.updateAvailable&&state!=='done';
   const lbl={idle:'分析して更新',analyzing:'分析中...',updating:'更新中...',done:'✓ 完了'}[state]||'分析して更新';
@@ -323,7 +323,7 @@ function PluginRow({plugin,state,onInitiate}){
     )
   );
 }
- 
+
 // ─── メインApp ────────────────────────────────────────
 function App(){
   const[phase,setPhase]=useState('setup');
@@ -334,23 +334,22 @@ function App(){
   const[pstate,setPstate]=useState({});
   const[coreState,setCoreState]=useState('idle');
   const[modal,setModal]=useState(null);
-  const[ai,setAi]=useState({loading:false,text:null});
-  const[toast,setToast]=useState(null);
   const[aAll,setAAll]=useState(false);
+  const[toast,setToast]=useState(null);
   const[conn,setConn]=useState(null);
   const[scanErr,setScanErr]=useState(null);
- 
+
   const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),3200)};
- 
+
   const scan=async()=>{
     setScanErr(null);
     if(!form.url||!form.apiKey){setScanErr('URLとAPIキーを入力してください');return;}
     const siteUrl=form.url.replace(/\/$/,'');
     setPhase('scanning');setScanLog([]);setPstate({});setCoreState('idle');setAi({loading:false,text:null});
     setConn({url:siteUrl,apiKey:form.apiKey});
- 
+
     for(const s of SCAN_STEPS.slice(0,4)){await sleep(300+Math.random()*200);setScanLog(p=>[...p,s]);}
- 
+
     let siteData,files=[];
     try{
       siteData=await wpRequest(siteUrl,form.apiKey,'/status');
@@ -366,11 +365,11 @@ function App(){
       setScanErr(`接続できませんでした。\n・URLが正しいか確認（例: https://your-site.com）\n・プラグインが有効化されているか確認\n・APIキーが正しいか確認\n\nエラー: ${e.message}`);
       return;
     }
- 
+
     await sleep(400);
     setData(siteData);setThemeFiles(files);setPhase('dashboard');
   };
- 
+
   const exPlugin=async(slug)=>{
     setPstate(p=>({...p,[slug]:'updating'}));
     try{
@@ -383,7 +382,7 @@ function App(){
       showToast(`❌ 更新失敗: ${e.message}`);
     }
   };
- 
+
   const exCore=async()=>{
     setCoreState('updating');
     try{
@@ -396,7 +395,7 @@ function App(){
       showToast(`❌ 更新失敗: ${e.message}`);
     }
   };
- 
+
   const initPlugin=async slug=>{
     setPstate(p=>({...p,[slug]:'analyzing'}));
     const plugin=data.plugins.find(x=>x.slug===slug);
@@ -408,7 +407,7 @@ function App(){
     }
     setPstate(p=>({...p,[slug]:'idle'}));
   };
- 
+
   const initCore=async()=>{
     setCoreState('analyzing');
     const fp={name:'WordPress 本体',current:data.wordpress.current,latest:data.wordpress.latest};
@@ -420,7 +419,7 @@ function App(){
     }
     setCoreState('idle');
   };
- 
+
   const initAll=async()=>{
     setAAll(true);
     const pp=data.plugins.filter(x=>x.updateAvailable);
@@ -441,26 +440,15 @@ function App(){
     }
     setAAll(false);
   };
- 
-  const runAI=async()=>{
-    setAi({loading:true,text:null});
-    const pu=data.plugins.filter(p=>p.updateAvailable).map(p=>p.name).join('、');
-    const prompt=`以下のWordPressサイト状態を分析し、優先度の高い順に🔴🟡🟢で示しながら日本語3〜4段落で説明してください。\n- WordPress: ${data.wordpress.current}（最新: ${data.wordpress.latest}）\n- PHP: ${data.php.current}（${data.php.status==='eol'?'EOL・サポート終了済みで危険':'正常'}）\n- 更新待ちプラグイン: ${data.plugins.filter(p=>p.updateAvailable).length}個（${pu}）\nサイトURL: ${data.site?.url||''}`;
-    try{
-      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-      const json=await res.json();
-      setAi({loading:false,text:json.content?.[0]?.text||'エラー'});
-    }catch{setAi({loading:false,text:'AI分析の取得に失敗しました。'});}
-  };
- 
+
   const calcScore=d=>{if(!d)return 0;let s=100;if(d.php.status==='eol')s-=35;if(d.wordpress.updateAvailable)s-=20;s-=d.plugins.filter(p=>p.updateAvailable).length*7;return Math.max(s,0);};
- 
+
   if(phase==='setup') return h(Setup,{form,setForm,onStart:scan,error:scanErr});
   if(phase==='scanning') return h(Scanning,{log:scanLog});
- 
+
   const score=calcScore(data);
   const tot=(data.wordpress.updateAvailable&&coreState!=='done'?1:0)+data.plugins.filter(p=>p.updateAvailable&&pstate[p.slug]!=='done').length;
- 
+
   return h('div',{className:'dash'},
     h('header',{className:'hdr'},
       h('span',{className:'hdr-logo'},'WP Health'),
@@ -479,18 +467,13 @@ function App(){
         h('div',{className:'pthead'},h('span',null,'プラグイン名'),h('span',null,'現在'),h('span',null,'最新'),h('span',null,'状態'),h('span',null,'')),
         data.plugins.map(plugin=>h(PluginRow,{key:plugin.slug,plugin,state:pstate[plugin.slug]||'idle',onInitiate:()=>initPlugin(plugin.slug)}))
       ),
-      h('div',{className:'ai-panel'},
-        h('div',{className:'ai-hdr'},h('span',{className:'ai-title'},h('span',{className:'ai-spark'},'✦'),' AI 診断レポート'),h('button',{className:'btn-accent',onClick:runAI,disabled:ai.loading},ai.loading?'分析中...':'Claude で分析する')),
-        ai.loading&&h('div',{className:'ai-loading'},h('div',{className:'spinner'}),'サイト状態を分析しています...'),
-        ai.text&&h('div',{className:'ai-body'},ai.text),
-        !ai.loading&&!ai.text&&h('div',{className:'ai-placeholder'},'「Claude で分析する」でサイトの状態を診断し',h('br'),'優先度の高い順に対応事項をまとめたレポートを生成します。')
-      )
+
     ),
     h(RiskModal,{modal,onCancel:()=>setModal(null)}),
     toast&&h('div',{className:'toast'},toast)
   );
 }
- 
+
 ReactDOM.render(h(App),document.getElementById('root'));
 </script>
 </body>
