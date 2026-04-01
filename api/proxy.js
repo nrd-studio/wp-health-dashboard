@@ -1,75 +1,85 @@
 const https = require('https');
 const http = require('http');
 
-module.exports = async function handler(req, res) {
+module.exports = function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-WPH-Key');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
-  const { siteUrl, apiKey, path } = req.query;
-  if (!siteUrl || !apiKey || !path) {
-    return res.status(400).json({ error: 'siteUrl, apiKey, path は必須です' });
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
   }
 
-  const targetUrl = `${siteUrl}/wp-json/wp-health/v1${path}`;
+  var siteUrl = req.query.siteUrl;
+  var apiKey  = req.query.apiKey;
+  var path    = req.query.path;
 
-  let parsed;
+  if (!siteUrl || !apiKey || !path) {
+    res.status(400).json({ error: 'siteUrl, apiKey, path は必須です' });
+    return;
+  }
+
+  var targetUrl = siteUrl + '/wp-json/wp-health/v1' + path;
+  var parsed;
+
   try {
     parsed = new URL(targetUrl);
   } catch(e) {
-    return res.status(400).json({ error: '無効なURL: ' + targetUrl });
+    res.status(400).json({ error: '無効なURL: ' + targetUrl });
+    return;
   }
 
-  const isHttps = parsed.protocol === 'https:';
-  const lib = isHttps ? https : http;
-  const body = (req.method === 'POST' && req.body)
-    ? JSON.stringify(req.body) : null;
+  var isHttps = parsed.protocol === 'https:';
+  var lib = isHttps ? https : http;
 
-  const options = {
+  var bodyData = null;
+  if (req.method === 'POST' && req.body) {
+    bodyData = JSON.stringify(req.body);
+  }
+
+  var headers = {
+    'Content-Type': 'application/json',
+    'X-WPH-Key': apiKey
+  };
+  if (bodyData) {
+    headers['Content-Length'] = Buffer.byteLength(bodyData);
+  }
+
+  var options = {
     hostname: parsed.hostname,
     port: parsed.port || (isHttps ? 443 : 80),
     path: parsed.pathname + parsed.search,
     method: req.method,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-WPH-Key': apiKey,
-      ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {}),
-    },
+    headers: headers
   };
 
-  return new Promise((resolve) => {
-    const proxyReq = lib.request(options, (proxyRes) => {
-      let data = '';
-      proxyRes.on('data', chunk => data += chunk);
-      proxyRes.on('end', () => {
-        try {
-          // WordPressからのレスポンスをそのまま返す（ステータスコード含む）
-          const parsed = JSON.parse(data);
-          res.status(proxyRes.statusCode).json(parsed);
-        } catch {
-          res.status(proxyRes.statusCode).json({ raw: data });
-        }
-        resolve();
-      });
+  var proxyReq = lib.request(options, function(proxyRes) {
+    var data = '';
+    proxyRes.on('data', function(chunk) {
+      data += chunk;
     });
-
-    proxyReq.on('error', (e) => {
-      res.status(500).json({
-        error: e.message,
-        code: e.code,
-        targetUrl,
-      });
-      resolve();
+    proxyRes.on('end', function() {
+      var parsed;
+      try {
+        parsed = JSON.parse(data);
+        res.status(proxyRes.statusCode).json(parsed);
+      } catch(e) {
+        res.status(proxyRes.statusCode).json({ raw: data });
+      }
     });
-
-    if (body) proxyReq.write(body);
-    proxyReq.end();
   });
-};
-```
 
-Commitしてデプロイ完了後、ブラウザで直接このURLを開いてみてください（APIキーはご自身のものに変えて）：
-```
-https://wp-health-dashboard-eight.vercel.app/api/proxy?siteUrl=https://nextmessage.nrd-studio.com&apiKey=あなたのキー&path=/status
+  proxyReq.on('error', function(e) {
+    res.status(500).json({
+      error: e.message,
+      code: e.code,
+      targetUrl: targetUrl
+    });
+  });
+
+  if (bodyData) {
+    proxyReq.write(bodyData);
+  }
+  proxyReq.end();
+};
