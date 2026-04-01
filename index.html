@@ -9,102 +9,104 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#05090d;--surface:#0b1320;--surface2:#101d2e;--border:#192940;--accent:#06cfe0;--accent-d:rgba(6,207,224,.10);--accent-g:rgba(6,207,224,.22);--green:#1bd97a;--amber:#f5a623;--red:#ff4455;--t1:#e0ecf8;--t2:#7ba3c0;--t3:#3d6482;--mono:'DM Mono','Courier New',monospace;--display:'Syne','Hiragino Kaku Gothic ProN',sans-serif}
+:root{--bg:#05090d;--surface:#0b1320;--surface2:#101d2e;--border:#192940;--accent:#06cfe0;--accent-d:rgba(6,207,224,.10);--accent-g:rgba(6,207,224,.22);--green:#1bd97a;--amber:#f5a623;--red:#ff4455;--t1:#e0ecf8;--t2:#7ba3c0;--t3:#3d6482;--mono:'DM Mono',monospace;--display:'Syne','Hiragino Kaku Gothic ProN',sans-serif}
 html,body,#root{min-height:100vh;background:var(--bg);color:var(--t1);font-family:var(--display);font-size:14px}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:#1f3450;border-radius:2px}
-.setup{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(6,207,224,.06) 0%,transparent 60%)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#1f3450;border-radius:2px}
+.setup{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(6,207,224,.06),transparent 60%)}
 .setup-card{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px}
 .logo-wrap{text-align:center;margin-bottom:32px}
 .logo-box{width:52px;height:52px;background:var(--accent-d);border:1px solid var(--accent);border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:14px}
 .logo-name{font-size:22px;font-weight:800;letter-spacing:-1px}
 .logo-sub{font-size:11px;color:var(--t2);margin-top:4px;font-weight:600}
-.field{margin-bottom:16px}.field label{display:block;font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}
-.field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--t1);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s}
-.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-d)}.field input::placeholder{color:var(--t3)}
-.btn-primary{width:100%;background:var(--accent);color:#000;border:none;border-radius:7px;padding:13px;font-family:var(--display);font-size:14px;font-weight:800;cursor:pointer;margin-top:8px;transition:opacity .15s,transform .1s}
-.btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}
+.field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--t1);font-family:var(--mono);font-size:13px;outline:none}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-d)}
+.field input::placeholder{color:var(--t3)}
+.btn-primary{width:100%;background:var(--accent);color:#000;border:none;border-radius:7px;padding:13px;font-family:var(--display);font-size:14px;font-weight:800;cursor:pointer;margin-top:8px}
+.btn-primary:hover{opacity:.88}
 .info-box{margin-top:18px;padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--t3);line-height:1.7}
 .info-box strong{color:var(--t2)}
 .err-box{margin-bottom:14px;padding:11px 13px;background:rgba(255,68,85,.1);border:1px solid rgba(255,68,85,.3);border-radius:6px;font-size:12px;color:var(--red);line-height:1.7;white-space:pre-wrap}
 .scanning{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:24px}
 .scan-heading{font-size:15px;font-weight:700;color:var(--t2)}
 .scan-box{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px;display:flex;flex-direction:column;gap:10px}
-.scan-line{font-family:var(--mono);font-size:12px;color:var(--t2);display:flex;align-items:center;gap:10px;animation:fadeSlide .3s ease}
+.scan-line{font-family:var(--mono);font-size:12px;color:var(--t2);display:flex;align-items:center;gap:10px;animation:fadeIn .3s ease}
 .scan-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-@keyframes fadeSlide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.55}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes overlayIn{from{opacity:0}to{opacity:1}}
 .dash{min-height:100vh;display:flex;flex-direction:column}
 .hdr{padding:13px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--surface);position:sticky;top:0;z-index:10;flex-wrap:wrap}
-.hdr-logo{font-size:14px;font-weight:800;letter-spacing:-.5px;color:var(--accent);white-space:nowrap}
+.hdr-logo{font-size:14px;font-weight:800;color:var(--accent);white-space:nowrap}
 .hdr-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
 .hdr-url{font-family:var(--mono);font-size:11px;color:var(--t2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .hdr-time{font-family:var(--mono);font-size:10px;color:var(--t3);white-space:nowrap}
-.btn-sm{background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--t2);padding:5px 11px;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;transition:border-color .15s,color .15s;white-space:nowrap}
+.btn-sm{background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--t2);padding:5px 11px;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
 .btn-sm:hover{border-color:var(--accent);color:var(--accent)}
-.btn-accent{background:var(--accent-d);border:1px solid var(--accent);color:var(--accent);border-radius:5px;padding:5px 13px;font-family:var(--display);font-size:11px;font-weight:800;cursor:pointer;transition:background .15s;white-space:nowrap}
-.btn-accent:hover{background:var(--accent-g)}.btn-accent:disabled{opacity:.45;cursor:not-allowed}
+.btn-accent{background:var(--accent-d);border:1px solid var(--accent);color:var(--accent);border-radius:5px;padding:5px 13px;font-family:var(--display);font-size:11px;font-weight:800;cursor:pointer}
+.btn-accent:hover{background:var(--accent-g)}
+.btn-accent:disabled{opacity:.45;cursor:not-allowed}
 .content{padding:20px;flex:1;max-width:1080px;margin:0 auto;width:100%}
 .score-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 22px;margin-bottom:18px;display:flex;align-items:center;gap:18px}
 .score-num{font-size:32px;font-weight:800;font-family:var(--mono);min-width:72px;line-height:1}
 .score-track{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden}
-.score-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.34,1.56,.64,1)}
+.score-fill{height:100%;border-radius:4px;transition:width .8s ease}
 .score-label{font-size:12px;color:var(--t2);white-space:nowrap}
 .summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:18px}
 .scard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative;overflow:hidden}
 .scard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
 .scard-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--t2);margin-bottom:9px}
-.scard-ver{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--t1);margin-bottom:4px;line-height:1.2}
+.scard-ver{font-family:var(--mono);font-size:22px;font-weight:500;margin-bottom:4px}
 .scard-sub{font-size:11px;color:var(--t2);margin-bottom:9px}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
 .badge.red{background:rgba(255,68,85,.12);color:var(--red);border:1px solid rgba(255,68,85,.3)}
 .badge.green{background:rgba(27,217,122,.1);color:var(--green);border:1px solid rgba(27,217,122,.25)}
 .badge.amber{background:rgba(245,166,35,.1);color:var(--amber);border:1px solid rgba(245,166,35,.25)}
-.scard-btn{margin-top:11px;border-radius:5px;padding:6px 10px;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;width:100%;border:1px solid rgba(245,166,35,.3);background:rgba(245,166,35,.1);color:var(--amber);transition:background .15s}
-.scard-btn:hover{background:rgba(245,166,35,.2)}.scard-btn:disabled{opacity:.4;cursor:not-allowed}
-.scard-btn.analyzing{color:var(--accent);border-color:rgba(6,207,224,.3);background:var(--accent-d);animation:blink 1s ease infinite}
-.scard-btn.updating{color:var(--accent);border-color:rgba(6,207,224,.3);background:var(--accent-d);animation:blink 1s ease infinite}
+.scard-btn{margin-top:11px;border-radius:5px;padding:6px 10px;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;width:100%;border:1px solid rgba(245,166,35,.3);background:rgba(245,166,35,.1);color:var(--amber)}
+.scard-btn:disabled{opacity:.4;cursor:not-allowed}
+.scard-btn.analyzing,.scard-btn.updating{color:var(--accent);border-color:rgba(6,207,224,.3);background:var(--accent-d);animation:blink 1s ease infinite}
 .scard-btn.done{color:var(--green);border-color:rgba(27,217,122,.3);background:rgba(27,217,122,.08)}
 .section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
-.section-title{font-size:13px;font-weight:700}.section-sub{font-size:11px;color:var(--t3)}
+.section-title{font-size:13px;font-weight:700}
+.section-sub{font-size:11px;color:var(--t3)}
 .ptable{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:18px}
 .pthead{display:grid;grid-template-columns:1fr 100px 100px 82px 130px;padding:8px 18px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3)}
-.prow{display:grid;grid-template-columns:1fr 100px 100px 82px 130px;padding:12px 18px;border-bottom:1px solid var(--border);align-items:center;transition:background .1s}
-.prow:last-child{border-bottom:none}.prow:hover{background:var(--surface2)}
-.pname{font-size:12px;font-weight:700;color:var(--t1);display:flex;align-items:center;gap:6px}
-.inactive-tag{font-size:9px;font-weight:700;color:var(--t3);background:var(--surface2);padding:1px 5px;border-radius:3px;border:1px solid var(--border)}
+.prow{display:grid;grid-template-columns:1fr 100px 100px 82px 130px;padding:12px 18px;border-bottom:1px solid var(--border);align-items:center}
+.prow:last-child{border-bottom:none}
+.prow:hover{background:var(--surface2)}
+.pname{font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}
+.inactive-tag{font-size:9px;color:var(--t3);background:var(--surface2);padding:1px 5px;border-radius:3px;border:1px solid var(--border)}
 .pver{font-family:var(--mono);font-size:11px;color:var(--t2)}
 .pver-new{font-family:var(--mono);font-size:11px;color:var(--amber);font-weight:500}
 .pver-ok{font-family:var(--mono);font-size:11px;color:var(--t3)}
-.upd-btn{border-radius:5px;padding:4px 9px;font-family:var(--display);font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;border:1px solid rgba(245,166,35,.3);background:rgba(245,166,35,.1);color:var(--amber);transition:all .15s}
-.upd-btn:hover{background:rgba(245,166,35,.2)}.upd-btn:disabled{opacity:.4;cursor:not-allowed}
-.upd-btn.analyzing{color:var(--accent);border-color:rgba(6,207,224,.3);background:var(--accent-d);animation:blink 1s ease infinite}
-.upd-btn.updating{color:var(--accent);border-color:rgba(6,207,224,.3);background:var(--accent-d);animation:blink 1s ease infinite}
+.upd-btn{border-radius:5px;padding:4px 9px;font-family:var(--display);font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;border:1px solid rgba(245,166,35,.3);background:rgba(245,166,35,.1);color:var(--amber)}
+.upd-btn:disabled{opacity:.4;cursor:not-allowed}
+.upd-btn.analyzing,.upd-btn.updating{color:var(--accent);border-color:rgba(6,207,224,.3);background:var(--accent-d);animation:blink 1s ease infinite}
 .upd-btn.done{color:var(--green);border-color:rgba(27,217,122,.3);background:rgba(27,217,122,.08);cursor:default}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px;animation:overlayIn .2s ease}
-.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:540px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.8);animation:modalIn .25s cubic-bezier(.34,1.2,.64,1)}
+.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:540px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.8);animation:modalIn .25s ease}
 .modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border)}
 .modal-title{font-size:14px;font-weight:800}
-.modal-close{background:none;border:none;color:var(--t3);font-size:22px;cursor:pointer;line-height:1;padding:0 4px;transition:color .15s}
+.modal-close{background:none;border:none;color:var(--t3);font-size:22px;cursor:pointer;line-height:1}
 .modal-close:hover{color:var(--t1)}
-.modal-plugin-section{padding:16px 22px 12px}
+.modal-body{padding:16px 22px}
 .modal-plugin-name{font-size:15px;font-weight:800;margin-bottom:6px}
-.modal-version-flow{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px}
-.modal-ver-old{color:var(--t3)}.modal-ver-arrow{color:var(--t3)}.modal-ver-new{color:var(--amber);font-weight:500}
-.modal-risk-wrap{padding:0 22px 16px}
+.modal-ver{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;margin-bottom:14px}
 .modal-risk-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:800}
 .modal-divider{height:1px;background:var(--border);margin:0 22px}
-.modal-analysis{padding:18px 22px;font-size:12px;line-height:1.85;color:var(--t2);white-space:pre-wrap;overflow-y:auto;flex:1;min-height:80px;max-height:280px}
-.modal-all-info{padding:12px 22px;background:var(--surface2);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--t2);line-height:1.8}
+.modal-analysis{padding:18px 22px;font-size:12px;line-height:1.85;color:var(--t2);white-space:pre-wrap;overflow-y:auto;max-height:280px}
+.modal-items{padding:12px 22px;background:var(--surface2);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--t2);line-height:1.8}
 .modal-footer{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--border);justify-content:flex-end}
-.modal-btn-cancel{background:transparent;border:1px solid var(--border);color:var(--t2);border-radius:6px;padding:8px 16px;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
-.modal-btn-cancel:hover{border-color:var(--accent);color:var(--accent)}
-.modal-btn-confirm{border:none;border-radius:6px;padding:8px 18px;font-family:var(--display);font-size:12px;font-weight:800;cursor:pointer;transition:opacity .15s;background:var(--accent);color:#000}
-.modal-btn-confirm:hover{opacity:.88}.modal-btn-confirm.danger{background:var(--red);color:#fff}
+.modal-cancel{background:transparent;border:1px solid var(--border);color:var(--t2);border-radius:6px;padding:8px 16px;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer}
+.modal-cancel:hover{border-color:var(--accent);color:var(--accent)}
+.modal-ok{border:none;border-radius:6px;padding:8px 18px;font-family:var(--display);font-size:12px;font-weight:800;cursor:pointer;background:var(--accent);color:#000}
+.modal-ok:hover{opacity:.88}
+.modal-ok.danger{background:var(--red);color:#fff}
 .toast{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--green);color:var(--green);padding:11px 16px;border-radius:8px;font-size:12px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:slideUp .3s ease;z-index:400}
 @media(max-width:600px){.summary-row{grid-template-columns:1fr}.pthead,.prow{grid-template-columns:1fr 80px 90px}.pthead span:nth-child(2),.prow>*:nth-child(2),.pthead span:nth-child(4),.prow>*:nth-child(4){display:none}.hdr-time{display:none}}
 </style>
@@ -112,372 +114,331 @@ html,body,#root{min-height:100vh;background:var(--bg);color:var(--t1);font-famil
 <body>
 <div id="root"></div>
 <script>
-const {useState,createElement:h}=React;
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+var e = React.createElement;
+var useState = React.useState;
 
-async function wpRequest(siteUrl,apiKey,path,method,body){
-  method=method||'GET';
-  var params=new URLSearchParams({siteUrl:siteUrl,apiKey:apiKey,path:path});
-  var opts={method:method,headers:{'Content-Type':'application/json'}};
-  if(body) opts.body=JSON.stringify(body);
-  var res=await fetch('/api/proxy?'+params,opts);
-  if(!res.ok){
-    var err={};
-    try{err=await res.json();}catch(e){}
-    throw new Error(err.error||'HTTP '+res.status);
-  }
-  return res.json();
+/* ── API ── */
+function wpReq(siteUrl, apiKey, path, method, body) {
+  var p = new URLSearchParams({ siteUrl: siteUrl, apiKey: apiKey, path: path });
+  var opts = { method: method || 'GET', headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  return fetch('/api/proxy?' + p, opts).then(function(r) {
+    return r.json().then(function(d) {
+      if (!r.ok) throw new Error(d.error || 'HTTP ' + r.status);
+      return d;
+    });
+  });
 }
 
-async function analyzeRisk(plugin,themeFiles){
-  var fileContents=(themeFiles||[]).map(function(f){return'// === '+f.name+' ===\n'+f.content;}).join('\n\n');
-  var prompt='WordPressカスタムテーマのPHPファイルを分析し、以下のプラグインアップデートのリスクを評価してください。\n\n【更新対象】'+plugin.name+'  '+plugin.current+' → '+plugin.latest+'\n\n【テーマPHPファイル】\n```php\n'+(fileContents.slice(0,12000)||'（テーマファイルを取得できませんでした）')+'\n```\n\n回答形式（厳守）：\n1行目：RISK:高 または RISK:中 または RISK:低 のみ\n2行目以降：テーマが使用している'+plugin.name+'のフック・関数名、衝突リスク、修正が必要なコード箇所、推奨アクションを日本語で記述してください。';
-  var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
-  var json=await res.json();
-  var text=json.content&&json.content[0]?json.content[0].text:'分析の取得に失敗しました';
-  var m=text.match(/RISK:(高|中|低)/);
-  return{riskLevel:m?m[1]:'中',analysis:text.replace(/^RISK:(高|中|低)\n?/,'').trim()};
+/* ── AI分析 ── */
+function aiAnalyze(prompt) {
+  return fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
+  }).then(function(r) { return r.json(); }).then(function(j) {
+    var text = j.content && j.content[0] ? j.content[0].text : '分析失敗';
+    var m = text.match(/RISK:(高|中|低)/);
+    return { riskLevel: m ? m[1] : '中', analysis: text.replace(/^RISK:(高|中|低)\n?/, '').trim() };
+  });
 }
 
-async function analyzeAllRisks(plugins,wpUpdate,themeFiles){
-  var fileContents=(themeFiles||[]).map(function(f){return'// === '+f.name+' ===\n'+f.content;}).join('\n\n');
-  var lines=[];
-  if(wpUpdate) lines.push('WordPress本体: '+wpUpdate.current+' → '+wpUpdate.latest);
-  plugins.forEach(function(p){lines.push(p.name+': '+p.current+' → '+p.latest);});
-  var prompt='WordPressカスタムテーマのPHPファイルを分析し、以下の全アップデートの総合リスクを評価してください。\n\n【更新対象一覧】\n'+lines.map(function(l){return'- '+l;}).join('\n')+'\n\n【テーマPHPファイル】\n```php\n'+(fileContents.slice(0,12000)||'（テーマファイルを取得できませんでした）')+'\n```\n\n回答形式（厳守）：\n1行目：RISK:高 または RISK:中 または RISK:低 のみ（総合評価）\n2行目以降：各更新とテーマの衝突リスク、推奨更新順序を日本語で記述してください。';
-  var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
-  var json=await res.json();
-  var text=json.content&&json.content[0]?json.content[0].text:'分析の取得に失敗しました';
-  var m=text.match(/RISK:(高|中|低)/);
-  return{riskLevel:m?m[1]:'中',analysis:text.replace(/^RISK:(高|中|低)\n?/,'').trim()};
+function riskPrompt(name, from, to, files) {
+  var fc = (files || []).map(function(f) { return '// ' + f.name + '\n' + f.content; }).join('\n\n').slice(0, 12000);
+  return 'WordPressテーマのPHPを分析し、「' + name + '」を ' + from + ' → ' + to + ' にアップデートするリスクを評価してください。\n\n【テーマPHP】\n```php\n' + (fc || '取得できませんでした') + '\n```\n\n1行目にRISK:高/中/低のみ。2行目以降に使用フック・関数名、衝突リスク、修正箇所、推奨アクションを日本語で。';
 }
 
-var SCAN_STEPS=['サイトへ接続中...','WordPress バージョンを確認中...','PHP バージョンを確認中...','プラグイン一覧を取得中...','最新バージョンを照合中...','テーマファイルを読み込み中...','レポートを生成中...'];
-
-function Setup(props){
-  return h('div',{className:'setup'},
-    h('div',{className:'setup-card'},
-      h('div',{className:'logo-wrap'},
-        h('div',{className:'logo-box'},'🩺'),
-        h('div',{className:'logo-name'},'WP Health'),
-        h('div',{className:'logo-sub'},'WordPress Maintenance Dashboard')
-      ),
-      h('div',{className:'field'},h('label',null,'サイト URL'),h('input',{value:props.form.url,onChange:function(e){props.setForm(function(p){return Object.assign({},p,{url:e.target.value});});},placeholder:'https://your-site.com'})),
-      h('div',{className:'field'},h('label',null,'API キー'),h('input',{type:'password',value:props.form.apiKey,onChange:function(e){props.setForm(function(p){return Object.assign({},p,{apiKey:e.target.value});});},placeholder:'wph_xxxxxxxxxxxxxxxxxxxx'})),
-      props.error&&h('div',{className:'err-box'},props.error),
-      h('button',{className:'btn-primary',onClick:props.onStart},'スキャン開始'),
-      h('div',{className:'info-box'},
-        h('strong',null,'接続方法'),h('br',null),
-        '① WP Health Agent プラグインをWordPressにインストール・有効化',h('br',null),
-        '② 設定 → WP Health Agent でAPIキーを生成',h('br',null),
-        '③ 上記フォームにサイトURLとAPIキーを入力'
-      )
-    )
-  );
+function riskAllPrompt(plugins, wpUpd, files) {
+  var fc = (files || []).map(function(f) { return '// ' + f.name + '\n' + f.content; }).join('\n\n').slice(0, 12000);
+  var lines = [];
+  if (wpUpd) lines.push('WordPress本体: ' + wpUpd.current + ' → ' + wpUpd.latest);
+  plugins.forEach(function(p) { lines.push(p.name + ': ' + p.current + ' → ' + p.latest); });
+  return '全アップデートの総合リスクを評価してください。\n\n【更新対象】\n' + lines.join('\n') + '\n\n【テーマPHP】\n```php\n' + (fc || '取得できませんでした') + '\n```\n\n1行目にRISK:高/中/低のみ。2行目以降に衝突リスクと推奨更新順序を日本語で。';
 }
 
-function Scanning(props){
-  return h('div',{className:'scanning'},
-    h('div',{className:'scan-heading'},'サイトをスキャン中...'),
-    h('div',{className:'scan-box'},
-      props.log.map(function(line,i){
-        return h('div',{key:i,className:'scan-line'},
-          h('span',{className:'scan-dot',style:{background:i===props.log.length-1?'var(--accent)':'var(--green)',animation:i===props.log.length-1?'pulse 1s ease infinite':'none'}}),
-          line
-        );
-      })
-    )
-  );
-}
+var STEPS = ['サイトへ接続中...', 'WordPress バージョンを確認中...', 'PHP バージョンを確認中...', 'プラグイン一覧を取得中...', '最新バージョンを照合中...', 'テーマファイルを読み込み中...', 'レポートを生成中...'];
 
-function RiskModal(props){
-  if(!props.modal) return null;
-  var modal=props.modal;
-  var isH=modal.riskLevel==='高',isL=modal.riskLevel==='低';
-  var rc=isH?'var(--red)':isL?'var(--green)':'var(--amber)';
-  var rb=isH?'rgba(255,68,85,.13)':isL?'rgba(27,217,122,.1)':'rgba(245,166,35,.1)';
-  var rbr=isH?'rgba(255,68,85,.35)':isL?'rgba(27,217,122,.3)':'rgba(245,166,35,.3)';
-  var ri=isH?'🔴':isL?'🟢':'🟡';
-  return h('div',{className:'modal-overlay',onClick:function(e){if(e.target===e.currentTarget)props.onCancel();}},
-    h('div',{className:'modal-card'},
-      h('div',{className:'modal-hdr'},
-        h('div',{style:{display:'flex',alignItems:'center',gap:8}},h('span',null,'🔍'),h('span',{className:'modal-title'},'更新前リスク分析')),
-        h('button',{className:'modal-close',onClick:props.onCancel},'×')
-      ),
-      h('div',{className:'modal-plugin-section'},
-        h('div',{className:'modal-plugin-name'},modal.isAllUpdate?'一括更新（'+modal.pendingCount+'件）':modal.plugin&&modal.plugin.name),
-        !modal.isAllUpdate&&modal.plugin&&h('div',{className:'modal-version-flow'},
-          h('span',{className:'modal-ver-old'},modal.plugin.current),
-          h('span',{className:'modal-ver-arrow'},'──→'),
-          h('span',{className:'modal-ver-new'},modal.plugin.latest)
-        )
-      ),
-      modal.isAllUpdate&&modal.allItems&&h('div',{className:'modal-all-info'},modal.allItems.map(function(it,i){return h('div',{key:i},'・'+it);})),
-      h('div',{className:'modal-risk-wrap'},
-        h('div',{className:'modal-risk-badge',style:{background:rb,border:'1px solid '+rbr,color:rc}},h('span',null,ri),h('span',null,modal.riskLevel+'リスク'))
-      ),
-      h('div',{className:'modal-divider'}),
-      h('div',{className:'modal-analysis'},modal.analysis),
-      h('div',{className:'modal-divider'}),
-      h('div',{className:'modal-footer'},
-        h('button',{className:'modal-btn-cancel',onClick:props.onCancel},'キャンセル'),
-        h('button',{className:'modal-btn-confirm'+(isH?' danger':''),onClick:modal.onConfirm},isH?'⚠ リスクを承知で更新する':'内容を確認した上で更新する →')
-      )
-    )
-  );
-}
+/* ── App ── */
+function App() {
+  var ph = useState('setup');     var phase = ph[0],    setPhase = ph[1];
+  var fm = useState({url:'',apiKey:''}); var form = fm[0], setForm = fm[1];
+  var lg = useState([]);          var log = lg[0],      setLog = lg[1];
+  var dt = useState(null);        var data = dt[0],     setData = dt[1];
+  var tf = useState([]);          var theme = tf[0],    setTheme = tf[1];
+  var ps = useState({});          var pst = ps[0],      setPst = ps[1];
+  var cs = useState('idle');      var cst = cs[0],      setCst = cs[1];
+  var md = useState(null);        var modal = md[0],    setModal = md[1];
+  var ts = useState(null);        var toast = ts[0],    setToast = ts[1];
+  var aa = useState(false);       var aall = aa[0],     setAall = aa[1];
+  var cn = useState(null);        var conn = cn[0],     setConn = cn[1];
+  var er = useState(null);        var err = er[0],      setErr = er[1];
 
-function scoreColor(s){return s>=80?'var(--green)':s>=55?'var(--amber)':'var(--red)';}
-function scoreLabel(s){return s>=80?'良好':s>=55?'要対応':'緊急';}
+  function showToast(msg) { setToast(msg); setTimeout(function() { setToast(null); }, 3200); }
 
-function HealthScore(props){
-  var c=scoreColor(props.score);
-  return h('div',{className:'score-bar'},
-    h('div',{className:'score-num',style:{color:c}},props.score),
-    h('div',{className:'score-track'},h('div',{className:'score-fill',style:{width:props.score+'%',background:c}})),
-    h('div',{className:'score-label'},'健康スコア ',h('strong',{style:{color:c}},scoreLabel(props.score)))
-  );
-}
-
-function WpCard(props){
-  var need=props.data.wordpress.updateAvailable&&props.state!=='done';
-  var c=need?'var(--amber)':'var(--green)';
-  var lblMap={idle:'→ '+props.data.wordpress.latest+' へ更新',analyzing:'リスク分析中...',updating:'更新中...',done:'✓ 完了'};
-  var lbl=lblMap[props.state]||'更新する';
-  return h('div',{className:'scard',style:{'--c':c}},
-    h('div',{className:'scard-label'},'WordPress Core'),
-    h('div',{className:'scard-ver'},props.data.wordpress.current),
-    h('div',{className:'scard-sub'},'最新: '+props.data.wordpress.latest),
-    need?h('span',{className:'badge amber'},'⬆ 更新あり'):h('span',{className:'badge green'},'✓ 最新'),
-    need&&h('button',{className:'scard-btn'+(props.state!=='idle'?' '+props.state:''),onClick:props.onInitiate,disabled:props.state!=='idle'},lbl)
-  );
-}
-
-function PhpCard(props){
-  var eol=props.data.php.status==='eol';
-  return h('div',{className:'scard',style:{'--c':eol?'var(--red)':'var(--green)'}},
-    h('div',{className:'scard-label'},'PHP バージョン'),
-    h('div',{className:'scard-ver'},props.data.php.current),
-    h('div',{className:'scard-sub'},'推奨: '+props.data.php.recommended+' 以上'),
-    eol?h('span',{className:'badge red'},'⚠ EOL・危険'):h('span',{className:'badge green'},'✓ 正常'),
-    eol&&h('div',{style:{marginTop:10,fontSize:11,color:'var(--red)',lineHeight:1.6}},'PHP 7.4 は 2022年11月にサポート終了済みです。サーバー管理者にアップグレードを依頼してください。')
-  );
-}
-
-function PluginsCard(props){
-  var p=props.data.plugins.filter(function(x){return x.updateAvailable;}).length;
-  var c=p===0?'var(--green)':p<=2?'var(--amber)':'var(--red)';
-  return h('div',{className:'scard',style:{'--c':c}},
-    h('div',{className:'scard-label'},'プラグイン'),
-    h('div',{className:'scard-ver'},props.data.plugins.length,h('span',{style:{fontSize:14,color:'var(--t2)',marginLeft:4}},'個')),
-    h('div',{className:'scard-sub'},'更新待ち: '+p+'個 / アクティブ: '+props.data.plugins.filter(function(x){return x.active;}).length+'個'),
-    p===0?h('span',{className:'badge green'},'✓ すべて最新'):h('span',{className:'badge red'},p+'件 要更新')
-  );
-}
-
-function PluginRow(props){
-  var plugin=props.plugin,state=props.state;
-  var isActive=plugin.updateAvailable&&state!=='done';
-  var lblMap={idle:'分析して更新',analyzing:'分析中...',updating:'更新中...',done:'✓ 完了'};
-  var lbl=lblMap[state]||'分析して更新';
-  var busy=state==='analyzing'||state==='updating';
-  var cls='upd-btn'+(busy?' '+state:state==='done'?' done':'');
-  return h('div',{className:'prow'},
-    h('div',{className:'pname'},plugin.name,!plugin.active&&h('span',{className:'inactive-tag'},'無効')),
-    h('div',{className:'pver'},plugin.current),
-    h('div',null,isActive?h('span',{className:'pver-new'},plugin.latest):h('span',{className:'pver-ok'},plugin.latest)),
-    h('div',null,isActive?h('span',{className:'badge amber'},'要更新'):h('span',{className:'badge green'},'最新')),
-    h('div',null,(isActive||busy)?h('button',{className:cls,onClick:props.onInitiate,disabled:state!=='idle'},lbl):h('button',{className:'upd-btn done',disabled:true},'✓ 完了'))
-  );
-}
-
-function App(){
-  var s=useState,phase=s('setup'),form=s({url:'',apiKey:''}),scanLog=s([]),data=s(null),themeFiles=s([]);
-  var pstate=s({}),coreState=s('idle'),modal=s(null),toast=s(null),aAll=s(false),conn=s(null),scanErr=s(null);
-  phase=phase;form=form;scanLog=scanLog;data=data;themeFiles=themeFiles;
-  pstate=pstate;coreState=coreState;modal=modal;toast=toast;aAll=aAll;conn=conn;scanErr=scanErr;
-
-  var setPhase=phase[1],getPhase=phase[0];
-  var setForm=form[1],getForm=form[0];
-  var setScanLog=scanLog[1],getScanLog=scanLog[0];
-  var setData=data[1],getData=data[0];
-  var setThemeFiles=themeFiles[1],getThemeFiles=themeFiles[0];
-  var setPstate=pstate[1],getPstate=pstate[0];
-  var setCoreState=coreState[1],getCoreState=coreState[0];
-  var setModal=modal[1],getModal=modal[0];
-  var setToast=toast[1],getToast=toast[0];
-  var setAAll=aAll[1],getAAll=aAll[0];
-  var setConn=conn[1],getConn=conn[0];
-  var setScanErr=scanErr[1],getScanErr=scanErr[0];
-
-  function showToast(msg){setToast(msg);setTimeout(function(){setToast(null);},3200);}
-
-  function scan(){
-    setScanErr(null);
-    var f=getForm();
-    if(!f.url||!f.apiKey){setScanErr('URLとAPIキーを入力してください');return;}
-    var siteUrl=f.url.replace(/\/$/,'');
-    setPhase('scanning');setScanLog([]);setPstate({});setCoreState('idle');
-    setConn({url:siteUrl,apiKey:f.apiKey});
-
-    var steps=SCAN_STEPS;
-    var i=0;
-    function nextStep(){
-      if(i<4){
-        setTimeout(function(){
-          setScanLog(function(p){return p.concat([steps[i]]);});
-          i++;nextStep();
-        },350+Math.random()*250);
+  function scan() {
+    setErr(null);
+    if (!form.url || !form.apiKey) { setErr('URLとAPIキーを入力してください'); return; }
+    var url = form.url.replace(/\/$/, '');
+    var key = form.apiKey;
+    setPhase('scanning'); setLog([]); setPst({}); setCst('idle'); setConn({ url: url, apiKey: key });
+    var i = 0;
+    function tick() {
+      if (i < 4) {
+        setTimeout(function() {
+          var s = STEPS[i]; i++;
+          setLog(function(p) { return p.concat([s]); });
+          tick();
+        }, 350 + Math.random() * 200);
       } else {
-        doFetch(siteUrl,f.apiKey);
+        wpReq(url, key, '/status').then(function(d) {
+          setLog(function(p) { return p.concat([STEPS[4]]); });
+          setData(d);
+          wpReq(url, key, '/theme-files').then(function(t) {
+            setTheme(t.files || []);
+          }).catch(function() {
+            setTheme([]);
+          }).finally(function() {
+            setLog(function(p) { return p.concat([STEPS[5], STEPS[6]]); });
+            setTimeout(function() { setPhase('dashboard'); }, 500);
+          });
+        }).catch(function(ex) {
+          setPhase('setup');
+          setErr('接続できませんでした。\n・URLが正しいか確認（例: https://your-site.com）\n・プラグインが有効化されているか確認\n・APIキーが正しいか確認\n\nエラー: ' + ex.message);
+        });
       }
     }
-    nextStep();
+    tick();
   }
 
-  function doFetch(siteUrl,apiKey){
-    wpRequest(siteUrl,apiKey,'/status').then(function(siteData){
-      setScanLog(function(p){return p.concat([SCAN_STEPS[4]]);});
-      return wpRequest(siteUrl,apiKey,'/theme-files').then(function(tf){
-        setScanLog(function(p){return p.concat([SCAN_STEPS[5],SCAN_STEPS[6]]);});
-        setThemeFiles(tf.files||[]);
-      }).catch(function(){
-        setScanLog(function(p){return p.concat([SCAN_STEPS[5],SCAN_STEPS[6]]);});
-      }).then(function(){
-        setTimeout(function(){setData(siteData);setPhase('dashboard');},400);
+  function doPlugin(slug) {
+    setPst(function(p) { var n = Object.assign({}, p); n[slug] = 'updating'; return n; });
+    wpReq(conn.url, conn.apiKey, '/update/plugin', 'POST', { slug: slug }).then(function() {
+      setData(function(d) {
+        return Object.assign({}, d, { plugins: d.plugins.map(function(x) {
+          return x.slug === slug ? Object.assign({}, x, { current: x.latest, updateAvailable: false }) : x;
+        })});
       });
-    }).catch(function(e){
-      setPhase('setup');
-      setScanErr('接続できませんでした。\n・URLが正しいか確認（例: https://your-site.com）\n・プラグインが有効化されているか確認\n・APIキーが正しいか確認\n\nエラー: '+e.message);
+      setPst(function(p) { var n = Object.assign({}, p); n[slug] = 'done'; return n; });
+      var nm = slug; if (data) data.plugins.forEach(function(x) { if (x.slug === slug) nm = x.name; });
+      showToast('✓ ' + nm + ' を更新しました');
+    }).catch(function(ex) {
+      setPst(function(p) { var n = Object.assign({}, p); n[slug] = 'idle'; return n; });
+      showToast('❌ 更新失敗: ' + ex.message);
     });
   }
 
-  function exPlugin(slug){
-    var c=getConn();
-    setPstate(function(p){var n=Object.assign({},p);n[slug]='updating';return n;});
-    wpRequest(c.url,c.apiKey,'/update/plugin','POST',{slug:slug}).then(function(){
-      setData(function(p){return Object.assign({},p,{plugins:p.plugins.map(function(x){return x.slug===slug?Object.assign({},x,{current:x.latest,updateAvailable:false}):x;})});});
-      setPstate(function(p){var n=Object.assign({},p);n[slug]='done';return n;});
-      var name='';getData()&&getData().plugins.forEach(function(x){if(x.slug===slug)name=x.name;});
-      showToast('✓ '+name+' を更新しました');
-    }).catch(function(e){
-      setPstate(function(p){var n=Object.assign({},p);n[slug]='idle';return n;});
-      showToast('❌ 更新失敗: '+e.message);
+  function doCore() {
+    setCst('updating');
+    wpReq(conn.url, conn.apiKey, '/update/core', 'POST').then(function() {
+      setData(function(d) {
+        return Object.assign({}, d, { wordpress: Object.assign({}, d.wordpress, { current: d.wordpress.latest, updateAvailable: false }) });
+      });
+      setCst('done'); showToast('✓ WordPress を更新しました');
+    }).catch(function(ex) { setCst('idle'); showToast('❌ 更新失敗: ' + ex.message); });
+  }
+
+  function initPlugin(slug) {
+    setPst(function(p) { var n = Object.assign({}, p); n[slug] = 'analyzing'; return n; });
+    var plugin = data.plugins.find(function(x) { return x.slug === slug; });
+    aiAnalyze(riskPrompt(plugin.name, plugin.current, plugin.latest, theme)).then(function(r) {
+      setModal({ plugin: plugin, riskLevel: r.riskLevel, analysis: r.analysis, onOk: function() { setModal(null); doPlugin(slug); } });
+    }).catch(function() {
+      setModal({ plugin: plugin, riskLevel: '中', analysis: 'リスク分析の取得に失敗しました。テスト環境での確認を推奨します。', onOk: function() { setModal(null); doPlugin(slug); } });
+    }).finally(function() {
+      setPst(function(p) { var n = Object.assign({}, p); n[slug] = 'idle'; return n; });
     });
   }
 
-  function exCore(){
-    var c=getConn();
-    setCoreState('updating');
-    wpRequest(c.url,c.apiKey,'/update/core','POST').then(function(){
-      setData(function(p){return Object.assign({},p,{wordpress:Object.assign({},p.wordpress,{current:p.wordpress.latest,updateAvailable:false})});});
-      setCoreState('done');
-      showToast('✓ WordPress を更新しました');
-    }).catch(function(e){
-      setCoreState('idle');
-      showToast('❌ 更新失敗: '+e.message);
-    });
+  function initCore() {
+    setCst('analyzing');
+    var fp = { name: 'WordPress 本体', current: data.wordpress.current, latest: data.wordpress.latest };
+    aiAnalyze(riskPrompt(fp.name, fp.current, fp.latest, theme)).then(function(r) {
+      setModal({ plugin: fp, riskLevel: r.riskLevel, analysis: r.analysis, onOk: function() { setModal(null); doCore(); } });
+    }).catch(function() {
+      setModal({ plugin: fp, riskLevel: '中', analysis: 'リスク分析の取得に失敗しました。', onOk: function() { setModal(null); doCore(); } });
+    }).finally(function() { setCst('idle'); });
   }
 
-  function initPlugin(slug){
-    setPstate(function(p){var n=Object.assign({},p);n[slug]='analyzing';return n;});
-    var plugin=getData().plugins.find(function(x){return x.slug===slug;});
-    analyzeRisk(plugin,getThemeFiles()).then(function(r){
-      setModal({plugin:plugin,riskLevel:r.riskLevel,analysis:r.analysis,onConfirm:function(){setModal(null);exPlugin(slug);}});
-    }).catch(function(){
-      setModal({plugin:plugin,riskLevel:'中',analysis:'リスク分析の取得に失敗しました。\nテスト環境での確認を推奨します。',onConfirm:function(){setModal(null);exPlugin(slug);}});
-    }).finally(function(){
-      setPstate(function(p){var n=Object.assign({},p);n[slug]='idle';return n;});
-    });
-  }
-
-  function initCore(){
-    setCoreState('analyzing');
-    var d=getData();
-    var fp={name:'WordPress 本体',current:d.wordpress.current,latest:d.wordpress.latest};
-    analyzeRisk(fp,getThemeFiles()).then(function(r){
-      setModal({plugin:fp,riskLevel:r.riskLevel,analysis:r.analysis,onConfirm:function(){setModal(null);exCore();}});
-    }).catch(function(){
-      setModal({plugin:fp,riskLevel:'中',analysis:'リスク分析の取得に失敗しました。バックアップ後に更新することを推奨します。',onConfirm:function(){setModal(null);exCore();}});
-    }).finally(function(){setCoreState('idle');});
-  }
-
-  function initAll(){
-    setAAll(true);
-    var d=getData();
-    var pp=d.plugins.filter(function(x){return x.updateAvailable;});
-    var pc=d.wordpress.updateAvailable&&getCoreState()!=='done';
-    var items=[];
-    if(pc) items.push('WordPress 本体: '+d.wordpress.current+' → '+d.wordpress.latest);
-    pp.forEach(function(p){items.push(p.name+': '+p.current+' → '+p.latest);});
-    analyzeAllRisks(pp,pc?d.wordpress:null,getThemeFiles()).then(function(r){
-      setModal({isAllUpdate:true,pendingCount:items.length,allItems:items,riskLevel:r.riskLevel,analysis:r.analysis,
-        onConfirm:function(){
+  function initAll() {
+    setAall(true);
+    var pp = data.plugins.filter(function(x) { return x.updateAvailable; });
+    var pc = data.wordpress.updateAvailable && cst !== 'done';
+    var items = [];
+    if (pc) items.push('WordPress 本体: ' + data.wordpress.current + ' → ' + data.wordpress.latest);
+    pp.forEach(function(p) { items.push(p.name + ': ' + p.current + ' → ' + p.latest); });
+    aiAnalyze(riskAllPrompt(pp, pc ? data.wordpress : null, theme)).then(function(r) {
+      setModal({
+        isAll: true, count: items.length, items: items,
+        riskLevel: r.riskLevel, analysis: r.analysis,
+        onOk: function() {
           setModal(null);
-          var chain=pc?exCore():Promise.resolve();
-          pp.reduce(function(p,pl){return p.then(function(){return exPlugin(pl.slug);});},Promise.resolve(chain));
-          showToast('🎉 すべての更新が完了しました！');
+          if (pc) doCore();
+          pp.forEach(function(p) { doPlugin(p.slug); });
+          showToast('更新を開始しました');
         }
       });
-    }).catch(function(){
-      setModal({isAllUpdate:true,pendingCount:items.length,allItems:items,riskLevel:'中',
-        analysis:'一括リスク分析の取得に失敗しました。',
-        onConfirm:function(){setModal(null);}
-      });
-    }).finally(function(){setAAll(false);});
+    }).catch(function() {
+      setModal({ isAll: true, count: items.length, items: items, riskLevel: '中', analysis: '一括リスク分析の取得に失敗しました。', onOk: function() { setModal(null); } });
+    }).finally(function() { setAall(false); });
   }
 
-  function calcScore(d){
-    if(!d)return 0;
-    var s=100;
-    if(d.php.status==='eol')s-=35;
-    if(d.wordpress.updateAvailable)s-=20;
-    s-=d.plugins.filter(function(p){return p.updateAvailable;}).length*7;
-    return Math.max(s,0);
+  /* ── RENDER ── */
+  if (phase === 'setup') {
+    return e('div', { className: 'setup' },
+      e('div', { className: 'setup-card' },
+        e('div', { className: 'logo-wrap' },
+          e('div', { className: 'logo-box' }, '🩺'),
+          e('div', { className: 'logo-name' }, 'WP Health'),
+          e('div', { className: 'logo-sub' }, 'WordPress Maintenance Dashboard')
+        ),
+        e('div', { className: 'field' }, e('label', null, 'サイト URL'),
+          e('input', { value: form.url, placeholder: 'https://your-site.com',
+            onChange: function(ev) { setForm(function(f) { return Object.assign({}, f, { url: ev.target.value }); }); } })
+        ),
+        e('div', { className: 'field' }, e('label', null, 'API キー'),
+          e('input', { type: 'password', value: form.apiKey, placeholder: 'wph_xxxxxxxxxxxxxxxxxxxx',
+            onChange: function(ev) { setForm(function(f) { return Object.assign({}, f, { apiKey: ev.target.value }); }); } })
+        ),
+        err ? e('div', { className: 'err-box' }, err) : null,
+        e('button', { className: 'btn-primary', onClick: scan }, 'スキャン開始'),
+        e('div', { className: 'info-box' },
+          e('strong', null, '接続方法'), e('br'), '① WP Health Agent プラグインをWordPressにインストール・有効化',
+          e('br'), '② 設定 → WP Health Agent でAPIキーを生成',
+          e('br'), '③ 上記フォームにURLとAPIキーを入力'
+        )
+      )
+    );
   }
 
-  if(getPhase()==='setup') return h(Setup,{form:getForm(),setForm:setForm,onStart:scan,error:getScanErr()});
-  if(getPhase()==='scanning') return h(Scanning,{log:getScanLog()});
+  if (phase === 'scanning') {
+    return e('div', { className: 'scanning' },
+      e('div', { className: 'scan-heading' }, 'サイトをスキャン中...'),
+      e('div', { className: 'scan-box' },
+        log.map(function(line, i) {
+          return e('div', { key: i, className: 'scan-line' },
+            e('span', { className: 'scan-dot', style: { background: i === log.length - 1 ? 'var(--accent)' : 'var(--green)', animation: i === log.length - 1 ? 'pulse 1s ease infinite' : 'none' } }),
+            line
+          );
+        })
+      )
+    );
+  }
 
-  var d=getData();
-  var score=calcScore(d);
-  var ps=getPstate();
-  var tot=(d.wordpress.updateAvailable&&getCoreState()!=='done'?1:0)+d.plugins.filter(function(p){return p.updateAvailable&&ps[p.slug]!=='done';}).length;
+  /* dashboard */
+  var sc = 100;
+  if (data.php.status === 'eol') sc -= 35;
+  if (data.wordpress.updateAvailable) sc -= 20;
+  sc -= data.plugins.filter(function(p) { return p.updateAvailable; }).length * 7;
+  sc = Math.max(sc, 0);
+  var scol = sc >= 80 ? 'var(--green)' : sc >= 55 ? 'var(--amber)' : 'var(--red)';
+  var slbl = sc >= 80 ? '良好' : sc >= 55 ? '要対応' : '緊急';
+  var pendingPlugins = data.plugins.filter(function(p) { return p.updateAvailable; });
+  var tot = (data.wordpress.updateAvailable && cst !== 'done' ? 1 : 0) + pendingPlugins.filter(function(p) { return pst[p.slug] !== 'done'; }).length;
+  var wpNeed = data.wordpress.updateAvailable && cst !== 'done';
+  var phpEol = data.php.status === 'eol';
+  var wpLbl = { idle: '→ ' + data.wordpress.latest + ' へ更新', analyzing: 'リスク分析中...', updating: '更新中...', done: '✓ 完了' }[cst] || '更新する';
 
-  return h('div',{className:'dash'},
-    h('header',{className:'hdr'},
-      h('span',{className:'hdr-logo'},'WP Health'),
-      h('span',{className:'hdr-sep'}),
-      h('span',{className:'hdr-url'},d.site&&d.site.url||getConn()&&getConn().url),
-      h('span',{className:'hdr-time'},'スキャン: ',new Date().toLocaleTimeString('ja-JP')),
-      h('button',{className:'btn-sm',onClick:function(){setPhase('setup');}},'← 設定'),
-      h('button',{className:'btn-sm',onClick:scan},'再スキャン'),
-      tot>0&&h('button',{className:'btn-accent',onClick:initAll,disabled:getAAll()},getAAll()?'一括分析中...':'一括リスク分析 + 更新 ('+tot+'件)')
+  return e('div', { className: 'dash' },
+    e('header', { className: 'hdr' },
+      e('span', { className: 'hdr-logo' }, 'WP Health'),
+      e('span', { className: 'hdr-sep' }),
+      e('span', { className: 'hdr-url' }, data.site && data.site.url || conn && conn.url || ''),
+      e('span', { className: 'hdr-time' }, 'スキャン: ' + new Date().toLocaleTimeString('ja-JP')),
+      e('button', { className: 'btn-sm', onClick: function() { setPhase('setup'); } }, '← 設定'),
+      e('button', { className: 'btn-sm', onClick: scan }, '再スキャン'),
+      tot > 0 ? e('button', { className: 'btn-accent', onClick: initAll, disabled: aall }, aall ? '一括分析中...' : '一括リスク分析 + 更新 (' + tot + '件)') : null
     ),
-    h('div',{className:'content'},
-      h(HealthScore,{score:score}),
-      h('div',{className:'summary-row'},
-        h(WpCard,{data:d,state:getCoreState(),onInitiate:initCore}),
-        h(PhpCard,{data:d}),
-        h(PluginsCard,{data:d})
+    e('div', { className: 'content' },
+      e('div', { className: 'score-bar' },
+        e('div', { className: 'score-num', style: { color: scol } }, sc),
+        e('div', { className: 'score-track' }, e('div', { className: 'score-fill', style: { width: sc + '%', background: scol } })),
+        e('div', { className: 'score-label' }, '健康スコア ', e('strong', { style: { color: scol } }, slbl))
       ),
-      h('div',{className:'section-hdr'},
-        h('span',{className:'section-title'},'インストール済みプラグイン'),
-        h('span',{className:'section-sub'},d.plugins.filter(function(p){return p.updateAvailable;}).length+'件の更新待ち / 全'+d.plugins.length+'個')
+      e('div', { className: 'summary-row' },
+        e('div', { className: 'scard', style: { '--c': wpNeed ? 'var(--amber)' : 'var(--green)' } },
+          e('div', { className: 'scard-label' }, 'WordPress Core'),
+          e('div', { className: 'scard-ver' }, data.wordpress.current),
+          e('div', { className: 'scard-sub' }, '最新: ' + data.wordpress.latest),
+          wpNeed ? e('span', { className: 'badge amber' }, '⬆ 更新あり') : e('span', { className: 'badge green' }, '✓ 最新'),
+          wpNeed ? e('button', { className: 'scard-btn ' + (cst !== 'idle' ? cst : ''), onClick: initCore, disabled: cst !== 'idle' }, wpLbl) : null
+        ),
+        e('div', { className: 'scard', style: { '--c': phpEol ? 'var(--red)' : 'var(--green)' } },
+          e('div', { className: 'scard-label' }, 'PHP バージョン'),
+          e('div', { className: 'scard-ver' }, data.php.current),
+          e('div', { className: 'scard-sub' }, '推奨: ' + data.php.recommended + ' 以上'),
+          phpEol ? e('span', { className: 'badge red' }, '⚠ EOL・危険') : e('span', { className: 'badge green' }, '✓ 正常'),
+          phpEol ? e('div', { style: { marginTop: 10, fontSize: 11, color: 'var(--red)', lineHeight: 1.6 } }, 'PHP 7.4 は 2022年11月にサポート終了済みです。サーバー管理者にアップグレードを依頼してください。') : null
+        ),
+        e('div', { className: 'scard', style: { '--c': pendingPlugins.length === 0 ? 'var(--green)' : pendingPlugins.length <= 2 ? 'var(--amber)' : 'var(--red)' } },
+          e('div', { className: 'scard-label' }, 'プラグイン'),
+          e('div', { className: 'scard-ver' }, data.plugins.length, e('span', { style: { fontSize: 14, color: 'var(--t2)', marginLeft: 4 } }, '個')),
+          e('div', { className: 'scard-sub' }, '更新待ち: ' + pendingPlugins.length + '個 / アクティブ: ' + data.plugins.filter(function(x) { return x.active; }).length + '個'),
+          pendingPlugins.length === 0 ? e('span', { className: 'badge green' }, '✓ すべて最新') : e('span', { className: 'badge red' }, pendingPlugins.length + '件 要更新')
+        )
       ),
-      h('div',{className:'ptable'},
-        h('div',{className:'pthead'},h('span',null,'プラグイン名'),h('span',null,'現在'),h('span',null,'最新'),h('span',null,'状態'),h('span',null,'')),
-        d.plugins.map(function(plugin){
-          return h(PluginRow,{key:plugin.slug,plugin:plugin,state:ps[plugin.slug]||'idle',onInitiate:function(){initPlugin(plugin.slug);}});
+      e('div', { className: 'section-hdr' },
+        e('span', { className: 'section-title' }, 'インストール済みプラグイン'),
+        e('span', { className: 'section-sub' }, pendingPlugins.length + '件の更新待ち / 全' + data.plugins.length + '個')
+      ),
+      e('div', { className: 'ptable' },
+        e('div', { className: 'pthead' }, e('span', null, 'プラグイン名'), e('span', null, '現在'), e('span', null, '最新'), e('span', null, '状態'), e('span', null, '')),
+        data.plugins.map(function(pl) {
+          var st = pst[pl.slug] || 'idle';
+          var active = pl.updateAvailable && st !== 'done';
+          var busy = st === 'analyzing' || st === 'updating';
+          var lbl = { idle: '分析して更新', analyzing: '分析中...', updating: '更新中...', done: '✓ 完了' }[st] || '分析して更新';
+          return e('div', { key: pl.slug, className: 'prow' },
+            e('div', { className: 'pname' }, pl.name, !pl.active ? e('span', { className: 'inactive-tag' }, '無効') : null),
+            e('div', { className: 'pver' }, pl.current),
+            e('div', null, active ? e('span', { className: 'pver-new' }, pl.latest) : e('span', { className: 'pver-ok' }, pl.latest)),
+            e('div', null, active ? e('span', { className: 'badge amber' }, '要更新') : e('span', { className: 'badge green' }, '最新')),
+            e('div', null,
+              (active || busy)
+                ? e('button', { className: 'upd-btn' + (busy ? ' ' + st : ''), onClick: function() { initPlugin(pl.slug); }, disabled: st !== 'idle' }, lbl)
+                : e('button', { className: 'upd-btn done', disabled: true }, '✓ 完了')
+            )
+          );
         })
       )
     ),
-    h(RiskModal,{modal:getModal(),onCancel:function(){setModal(null);}}),
-    getToast()&&h('div',{className:'toast'},getToast())
+    modal ? e('div', { className: 'modal-overlay', onClick: function(ev) { if (ev.target === ev.currentTarget) setModal(null); } },
+      e('div', { className: 'modal-card' },
+        e('div', { className: 'modal-hdr' },
+          e('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } }, e('span', null, '🔍'), e('span', { className: 'modal-title' }, '更新前リスク分析')),
+          e('button', { className: 'modal-close', onClick: function() { setModal(null); } }, '×')
+        ),
+        e('div', { className: 'modal-body' },
+          e('div', { className: 'modal-plugin-name' }, modal.isAll ? '一括更新（' + modal.count + '件）' : modal.plugin && modal.plugin.name),
+          !modal.isAll && modal.plugin ? e('div', { className: 'modal-ver' },
+            e('span', { style: { color: 'var(--t3)' } }, modal.plugin.current),
+            e('span', { style: { color: 'var(--t3)' } }, ' ──→ '),
+            e('span', { style: { color: 'var(--amber)', fontFamily: 'var(--mono)' } }, modal.plugin.latest)
+          ) : null,
+          e('div', { className: 'modal-risk-badge', style: {
+            background: modal.riskLevel === '高' ? 'rgba(255,68,85,.13)' : modal.riskLevel === '低' ? 'rgba(27,217,122,.1)' : 'rgba(245,166,35,.1)',
+            border: '1px solid ' + (modal.riskLevel === '高' ? 'rgba(255,68,85,.35)' : modal.riskLevel === '低' ? 'rgba(27,217,122,.3)' : 'rgba(245,166,35,.3)'),
+            color: modal.riskLevel === '高' ? 'var(--red)' : modal.riskLevel === '低' ? 'var(--green)' : 'var(--amber)'
+          } },
+            e('span', null, modal.riskLevel === '高' ? '🔴' : modal.riskLevel === '低' ? '🟢' : '🟡'),
+            e('span', null, modal.riskLevel + 'リスク')
+          )
+        ),
+        modal.isAll && modal.items ? e('div', { className: 'modal-items' }, modal.items.map(function(it, i) { return e('div', { key: i }, '・' + it); })) : null,
+        e('div', { className: 'modal-divider' }),
+        e('div', { className: 'modal-analysis' }, modal.analysis),
+        e('div', { className: 'modal-divider' }),
+        e('div', { className: 'modal-footer' },
+          e('button', { className: 'modal-cancel', onClick: function() { setModal(null); } }, 'キャンセル'),
+          e('button', { className: 'modal-ok' + (modal.riskLevel === '高' ? ' danger' : ''), onClick: modal.onOk },
+            modal.riskLevel === '高' ? '⚠ リスクを承知で更新する' : '内容を確認した上で更新する →'
+          )
+        )
+      )
+    ) : null,
+    toast ? e('div', { className: 'toast' }, toast) : null
   );
 }
 
-ReactDOM.render(h(App),document.getElementById('root'));
+ReactDOM.render(React.createElement(App), document.getElementById('root'));
 </script>
 </body>
 </html>
