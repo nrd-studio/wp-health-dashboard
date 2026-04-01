@@ -1,14 +1,8 @@
-export const config = {
-  api: { bodyParser: true }
-};
-
-export default async function handler(req, res) {
-  // CORSヘッダーを常に付与
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-WPH-Key');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
-  // OPTIONSプリフライトはここで返す
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -38,17 +32,12 @@ export default async function handler(req, res) {
     const text = await response.text();
 
     let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { raw: text };
-    }
+    try { data = JSON.parse(text); }
+    catch { data = { raw: text }; }
 
     return res.status(response.status).json(data);
 
   } catch (e) {
-    return res.status(500).json({
-      error: e.message,
-      targetUrl,
-    });
+    return res.status(500).json({ error: e.message, targetUrl });
   }
+}
