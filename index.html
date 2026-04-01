@@ -120,7 +120,7 @@ html,body,#root{min-height:100vh;background:var(--bg);color:var(--t1);font-famil
 var e = React.createElement;
 var useState = React.useState;
 
-/* ── API ── */
+/* -- API -- */
 function wpReq(siteUrl, apiKey, path, method, body) {
   var p = new URLSearchParams({ siteUrl: siteUrl, apiKey: apiKey, path: path });
   var opts = { method: method || 'GET', headers: { 'Content-Type': 'application/json' } };
@@ -133,41 +133,246 @@ function wpReq(siteUrl, apiKey, path, method, body) {
   });
 }
 
-/* ── AI分析 ── */
-function aiAnalyze(prompt) {
-  return fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
-  }).then(function(r) { return r.json(); }).then(function(j) {
-    var text = j.content && j.content[0] ? j.content[0].text : '分析失敗';
-    var m = text.match(/RISK:(高|中|低)/);
-    return { riskLevel: m ? m[1] : '中', analysis: text.replace(/^RISK:(高|中|低)\n?/, '').trim() };
+/* -- Static Analysis Engine -- */
+
+// PHP 8.x incompatible patterns
+var PHP8_RULES = [
+  { pattern: /create_function\s*\(/g,        level: '高', label: 'create_function()',     desc: 'PHP 8.0で完全削除。無名関数に書き直しが必要です。' },
+  { pattern: /each\s*\(/g,                 level: '高', label: 'each()',                desc: 'PHP 8.0で削除。foreach に書き直しが必要です。' },
+  { pattern: /\$\{[^}]+\}/g,                 level: '中', label: '${} 文字列補間',        desc: 'PHP 8.2で非推奨。{$var} 形式に変更してください。' },
+  { pattern: /ereg\s*\(/g,                   level: '高', label: 'ereg()',                desc: 'PHP 7.0で削除済み。preg_match() に移行が必要です。' },
+  { pattern: /eregi\s*\(/g,                  level: '高', label: 'eregi()',               desc: 'PHP 7.0で削除済み。preg_match()/i に移行が必要です。' },
+  { pattern: /split\s*\(/g,                  level: '高', label: 'split()',               desc: 'PHP 7.0で削除済み。explode() か preg_split() に移行が必要です。' },
+  { pattern: /mysql_[a-z_]+\s*\(/g,          level: '高', label: 'mysql_*() 関数',        desc: 'PHP 7.0で削除済み。mysqli または PDO に移行が必要です。' },
+  { pattern: /strpos\s*\([^)]+\)\s*==\s*0/g, level: '中', label: 'strpos() == 0',      desc: 'PHP 8では型比較が厳格化。=== 0 または str_starts_with() を使ってください。' },
+  { pattern: /settype\s*\(\s*\$[^,]+,\s*['"]integer['"]/g, level: '低', label: 'settype integer', desc: '型変換の挙動が変わる可能性があります。' },
+  { pattern: /PHP_ROUND_HALF_UP/g,       level: '低', label: 'PHP_ROUND_HALF_UP',    desc: 'PHP 8で丸め挙動が一部変更されています。' },
+  { pattern: /#\[.*\]/g,                     level: '低', label: 'アトリビュート構文',    desc: 'PHP 8.0以降の構文です。下位互換性を確認してください。' },
+];
+
+// Plugin known risk info
+var PLUGIN_KNOWN_RISKS = {
+  'advanced-custom-fields': {
+    note: 'ACFはメジャーバージョン間で関数・フックの変更が多いプラグインです。get_field()の挙動変化、acf_register_block_type()の引数変更などに注意が必要です。'
+  },
+  'contact-form-7': {
+    note: 'CF7はバージョン5.x系でスパムフィルター・バリデーションAPIが変更されました。wpcf7_validate_*フィルター、wpcf7_mail_sentアクションをテーマで使用している場合は動作確認が必要です。'
+  },
+  'woocommerce': {
+    note: 'WooCommerceはメジャーアップデートでテンプレートファイルが頻繁に変更されます。テーマのWooCommerceテンプレートを上書きしている場合は必ず確認が必要です。'
+  },
+  'wordfence': {
+    note: 'Wordfenceは通常アップデートが安全です。ただしメジャーバージョン変更時はWAFルールが更新され、一部の正常なリクエストがブロックされる場合があります。'
+  },
+  'yoast-seo': {
+    note: 'Yoast SEOはメジャーアップデートで管理画面のUIやフック名が変わることがあります。テーマでYoastのフックを使用している場合は確認が必要です。'
+  },
+  'wp-fastest-cache': {
+    note: 'WP Fastest CacheはPHP 8.x対応が一部不完全なバージョンがあります。アップデート後にキャッシュの動作を確認してください。'
+  }
+};
+
+function getVersionJump(from, to) {
+  var f = from.split('.').map(Number);
+  var t = to.split('.').map(Number);
+  if (t[0] > f[0]) return 'major';
+  if (t[1] > f[1]) return 'minor';
+  return 'patch';
+}
+
+// PHP file scan
+function staticCheckPhp(phpCurrent, phpTarget, plugins, files) {
+  var results = { level: '低', issues: [], pluginNotes: [], summary: '' };
+
+  if (!files || files.length === 0) {
+    results.summary = 'テーマファイルを取得できませんでした。プラグインが正しくインストールされているか確認してください。';
+    results.level = '中';
+    return results;
+  }
+
+  // Scan theme files
+  files.forEach(function(file) {
+    var lines = file.content.split('\n');
+    PHP8_RULES.forEach(function(rule) {
+      var matches = [];
+      lines.forEach(function(line, idx) {
+        if (rule.pattern.test(line)) {
+          matches.push({ line: idx + 1, code: line.trim().slice(0, 80) });
+        }
+        rule.pattern.lastIndex = 0;
+      });
+      if (matches.length > 0) {
+        results.issues.push({
+          file: file.name,
+          level: rule.level,
+          label: rule.label,
+          desc: rule.desc,
+          matches: matches.slice(0, 3)
+        });
+        if (rule.level === '高') results.level = '高';
+        else if (rule.level === '中' && results.level !== '高') results.level = '中';
+      }
+    });
   });
+
+  // プラグイン既知リスク
+  plugins.forEach(function(p) {
+    var known = PLUGIN_KNOWN_RISKS[p.slug];
+    if (known) {
+      results.pluginNotes.push({ name: p.name, note: known.note });
+    }
+  });
+
+  return results;
 }
 
+// Single plugin risk analysis
+function staticAnalyzePlugin(plugin, themeFiles) {
+  var jump = getVersionJump(plugin.current, plugin.latest);
+  var known = PLUGIN_KNOWN_RISKS[plugin.slug];
+  var themeUsage = [];
+  var riskLevel = jump === 'major' ? '高' : jump === 'minor' ? '中' : '低';
 
-function phpCheckPrompt(phpCurrent, phpTarget, plugins, files) {
-  var fc = (files || []).map(function(f) { return '// ' + f.name + '\n' + f.content; }).join('\n\n').slice(0, 15000);
-  var pluginList = plugins.map(function(p) { return '- ' + p.name + ' ' + p.current; }).join('\n');
-  return 'WordPressサイトのPHPを ' + phpCurrent + ' から ' + phpTarget + ' にアップグレードする場合の互換性を詳しく分析してください。\n\n【インストール済みプラグイン一覧】\n' + pluginList + '\n\n【テーマPHPファイル】\n```php\n' + (fc || '取得できませんでした') + '\n```\n\nPHP ' + phpCurrent + ' → ' + phpTarget + ' の主な破壊的変更（create_function廃止、型の厳格化、each廃止、文字列補間変更、null安全演算子など）に照らして以下を日本語で報告してください：\n\n1. テーマコード内の問題箇所（ファイル名と具体的なコード片）\n2. 各プラグインのPHP 8.x対応状況（既知の情報で概要を）\n3. アップグレード前に必要な修正作業のリスト\n4. 総合リスク評価（🔴高/🟡中/🟢低）と推奨アクション';
+  // テーマファイルでこのプラグインへの依存を検索
+  var searchTerms = {
+    'contact-form-7':         ['wpcf7', 'WPCF7', 'contact-form-7'],
+    'advanced-custom-fields': ['get_field', 'acf_', 'ACF', 'have_rows', 'the_field', 'acf_register'],
+    'wp-fastest-cache':       ['WpFastestCache', 'wpfc', 'WPFC'],
+    'yoast-seo':              ['wpseo_', 'WPSEO', 'Yoast'],
+    'wordfence':              ['wordfence', 'wfConfig'],
+    'woocommerce':            ['WC()', 'woocommerce', 'WC_'],
+  };
+
+  var terms = searchTerms[plugin.slug] || [];
+  if (terms.length > 0 && themeFiles) {
+    themeFiles.forEach(function(file) {
+      terms.forEach(function(term) {
+        var lines = file.content.split('\n');
+        lines.forEach(function(line, idx) {
+          if (line.indexOf(term) !== -1 && line.trim().indexOf('//') !== 0) {
+            themeUsage.push({ file: file.name, line: idx + 1, code: line.trim().slice(0, 80) });
+          }
+        });
+      });
+    });
+    themeUsage = themeUsage.slice(0, 5);
+    if (themeUsage.length > 0 && jump === 'minor') riskLevel = '中';
+    if (themeUsage.length > 0 && jump === 'major') riskLevel = '高';
+  }
+
+  return { riskLevel: riskLevel, themeUsage: themeUsage, known: known, jump: jump };
 }
 
-function riskPrompt(name, from, to, files) {
-  var fc = (files || []).map(function(f) { return '// ' + f.name + '\n' + f.content; }).join('\n\n').slice(0, 12000);
-  return 'WordPressテーマのPHPを分析し、「' + name + '」を ' + from + ' → ' + to + ' にアップデートするリスクを評価してください。\n\n【テーマPHP】\n```php\n' + (fc || '取得できませんでした') + '\n```\n\n1行目にRISK:高/中/低のみ。2行目以降に使用フック・関数名、衝突リスク、修正箇所、推奨アクションを日本語で。';
+function staticAnalyzeAll(plugins, wpUpdate, themeFiles) {
+  var maxLevel = '低';
+  var notes = [];
+
+  if (wpUpdate) {
+    var wjump = getVersionJump(wpUpdate.current, wpUpdate.latest);
+    if (wjump === 'major') { maxLevel = '高'; notes.push('WordPress本体のメジャーアップデートが含まれます。'); }
+    else if (wjump === 'minor') { if (maxLevel !== '高') maxLevel = '中'; }
+  }
+
+  plugins.forEach(function(p) {
+    var r = staticAnalyzePlugin(p, themeFiles);
+    if (r.riskLevel === '高') maxLevel = '高';
+    else if (r.riskLevel === '中' && maxLevel !== '高') maxLevel = '中';
+    if (r.themeUsage.length > 0) {
+      notes.push(p.name + ': テーマで' + r.themeUsage.length + '箇所使用中（' + (getVersionJump(p.current, p.latest) === 'major' ? 'メジャー' : 'マイナー') + 'アップデート）');
+    }
+  });
+
+  return { riskLevel: maxLevel, notes: notes };
 }
 
-function riskAllPrompt(plugins, wpUpd, files) {
-  var fc = (files || []).map(function(f) { return '// ' + f.name + '\n' + f.content; }).join('\n\n').slice(0, 12000);
+// Format analysis results
+function formatPluginAnalysis(plugin, themeFiles) {
+  var r = staticAnalyzePlugin(plugin, themeFiles);
   var lines = [];
-  if (wpUpd) lines.push('WordPress本体: ' + wpUpd.current + ' → ' + wpUpd.latest);
-  plugins.forEach(function(p) { lines.push(p.name + ': ' + p.current + ' → ' + p.latest); });
-  return '全アップデートの総合リスクを評価してください。\n\n【更新対象】\n' + lines.join('\n') + '\n\n【テーマPHP】\n```php\n' + (fc || '取得できませんでした') + '\n```\n\n1行目にRISK:高/中/低のみ。2行目以降に衝突リスクと推奨更新順序を日本語で。';
+  var jumpLabel = { major: 'メジャー（破壊的変更の可能性あり）', minor: 'マイナー（機能追加）', patch: 'パッチ（バグ修正）' }[r.jump];
+  lines.push('【バージョン変更の種類】' + jumpLabel);
+
+  if (r.themeUsage.length > 0) {
+    lines.push('\n【テーマ内での使用箇所】');
+    r.themeUsage.forEach(function(u) {
+      lines.push('  ' + u.file + ' 行' + u.line + ': ' + u.code);
+    });
+  } else {
+    lines.push('\nテーマ内でこのプラグインへの直接的な依存は検出されませんでした。');
+  }
+
+  if (r.known) {
+    lines.push('\n【既知のリスク情報】');
+    lines.push(r.known.note);
+  }
+
+  if (r.jump === 'major') {
+    lines.push('\n【推奨アクション】修正してから更新 — メジャーバージョンアップのため、テスト環境で動作確認後に本番へ適用してください。');
+  } else if (r.themeUsage.length > 0) {
+    lines.push('\n【推奨アクション】テスト環境で確認後に更新 — テーマで使用中のため、動作確認を推奨します。');
+  } else {
+    lines.push('\n【推奨アクション】すぐ更新可 — テーマへの影響は低いと判断されます。');
+  }
+
+  return { riskLevel: r.riskLevel, analysis: lines.join('\n') };
+}
+
+function formatAllAnalysis(plugins, wpUpdate, themeFiles) {
+  var r = staticAnalyzeAll(plugins, wpUpdate, themeFiles);
+  var lines = [];
+  if (r.notes.length > 0) {
+    lines.push('【テーマへの影響が検出された項目】');
+    r.notes.forEach(function(n) { lines.push('  ・' + n); });
+  } else {
+    lines.push('テーマへの直接的な影響は検出されませんでした。');
+  }
+  var hasHighRisk = plugins.some(function(p) { return getVersionJump(p.current, p.latest) === 'major'; });
+  if (hasHighRisk) {
+    lines.push('\nメジャーバージョンアップが含まれています。テスト環境での確認を強く推奨します。');
+    lines.push('\n【推奨更新順序】パッチ・マイナーのプラグインを先に更新し、動作確認後にメジャーアップデートを実施してください。');
+  } else {
+    lines.push('\n【推奨アクション】テーマへの影響が低い項目から順に更新してください。');
+  }
+  return { riskLevel: r.riskLevel, analysis: lines.join('\n') };
+}
+
+function formatPhpCheck(phpCurrent, phpTarget, plugins, files) {
+  var r = staticCheckPhp(phpCurrent, phpTarget, plugins, files);
+  var lines = [];
+
+  lines.push('PHP ' + phpCurrent + ' → ' + phpTarget + ' 互換性チェック結果');
+  lines.push('総合リスク: ' + { '高': '🔴 高', '中': '🟡 中', '低': '🟢 低' }[r.level]);
+
+  if (r.issues.length === 0) {
+    lines.push('\n✅ テーマコード内に既知の非互換パターンは検出されませんでした。');
+  } else {
+    lines.push('\n【検出された問題箇所】');
+    r.issues.forEach(function(issue) {
+      var icon = issue.level === '高' ? '🔴' : issue.level === '中' ? '🟡' : '🟢';
+      lines.push(icon + ' ' + issue.label + ' (' + issue.file + ')');
+      lines.push('   ' + issue.desc);
+      issue.matches.forEach(function(m) {
+        lines.push('   行' + m.line + ': ' + m.code);
+      });
+    });
+  }
+
+  if (r.pluginNotes.length > 0) {
+    lines.push('\n【プラグインのPHP 8.x 対応状況】');
+    r.pluginNotes.forEach(function(n) {
+      lines.push('■ ' + n.name);
+      lines.push('  ' + n.note);
+    });
+  }
+
+  lines.push('\n【注意】静的解析のため、実行時エラーをすべて検出できるわけではありません。テスト環境での動作確認を必ず行ってください。');
+
+  return { level: r.level, report: lines.join('\n') };
 }
 
 var STEPS = ['サイトへ接続中...', 'WordPress バージョンを確認中...', 'PHP バージョンを確認中...', 'プラグイン一覧を取得中...', '最新バージョンを照合中...', 'テーマファイルを読み込み中...', 'レポートを生成中...'];
 
-/* ── App ── */
+/* -- App -- */
 function App() {
   var ph = useState('setup');     var phase = ph[0],    setPhase = ph[1];
   var fm = useState({url:'',apiKey:''}); var form = fm[0], setForm = fm[1];
@@ -249,7 +454,7 @@ function App() {
   function initPlugin(slug) {
     setPst(function(p) { var n = Object.assign({}, p); n[slug] = 'analyzing'; return n; });
     var plugin = data.plugins.find(function(x) { return x.slug === slug; });
-    aiAnalyze(riskPrompt(plugin.name, plugin.current, plugin.latest, theme)).then(function(r) {
+    Promise.resolve(formatPluginAnalysis(plugin, theme)).then(function(r) {
       setModal({ plugin: plugin, riskLevel: r.riskLevel, analysis: r.analysis, onOk: function() { setModal(null); doPlugin(slug); } });
     }).catch(function() {
       setModal({ plugin: plugin, riskLevel: '中', analysis: 'リスク分析の取得に失敗しました。テスト環境での確認を推奨します。', onOk: function() { setModal(null); doPlugin(slug); } });
@@ -265,8 +470,8 @@ function App() {
 
   function initPhpCheck() {
     setPhpSt('checking'); setPhpRep(null);
-    aiAnalyze(phpCheckPrompt(data.php.current, data.php.recommended, data.plugins, theme)).then(function(r) {
-      setPhpRep(r.analysis);
+    Promise.resolve(formatPhpCheck(data.php.current, data.php.recommended, data.plugins, theme)).then(function(r) {
+      setPhpRep(r.report);
       setPhpSt('done');
     }).catch(function() {
       setPhpRep('互換性チェックの取得に失敗しました。');
@@ -277,7 +482,7 @@ function App() {
   function initCore() {
     setCst('analyzing');
     var fp = { name: 'WordPress 本体', current: data.wordpress.current, latest: data.wordpress.latest };
-    aiAnalyze(riskPrompt(fp.name, fp.current, fp.latest, theme)).then(function(r) {
+    Promise.resolve(formatPluginAnalysis(fp, theme)).then(function(r) {
       setModal({ plugin: fp, riskLevel: r.riskLevel, analysis: r.analysis, onOk: function() { setModal(null); doCore(); } });
     }).catch(function() {
       setModal({ plugin: fp, riskLevel: '中', analysis: 'リスク分析の取得に失敗しました。', onOk: function() { setModal(null); doCore(); } });
@@ -291,7 +496,7 @@ function App() {
     var items = [];
     if (pc) items.push('WordPress 本体: ' + data.wordpress.current + ' → ' + data.wordpress.latest);
     pp.forEach(function(p) { items.push(p.name + ': ' + p.current + ' → ' + p.latest); });
-    aiAnalyze(riskAllPrompt(pp, pc ? data.wordpress : null, theme)).then(function(r) {
+    Promise.resolve(formatAllAnalysis(pp, pc ? data.wordpress : null, theme)).then(function(r) {
       setModal({
         isAll: true, count: items.length, items: items,
         riskLevel: r.riskLevel, analysis: r.analysis,
@@ -307,7 +512,7 @@ function App() {
     }).finally(function() { setAall(false); });
   }
 
-  /* ── RENDER ── */
+  /* -- RENDER -- */
   if (phase === 'setup') {
     return e('div', { className: 'setup' },
       e('div', { className: 'setup-card' },
@@ -442,7 +647,7 @@ function App() {
           e('div', { className: 'modal-plugin-name' }, modal.isAll ? '一括更新（' + modal.count + '件）' : modal.plugin && modal.plugin.name),
           !modal.isAll && modal.plugin ? e('div', { className: 'modal-ver' },
             e('span', { style: { color: 'var(--t3)' } }, modal.plugin.current),
-            e('span', { style: { color: 'var(--t3)' } }, ' ──→ '),
+            e('span', { style: { color: 'var(--t3)' } }, ' --→ '),
             e('span', { style: { color: 'var(--amber)', fontFamily: 'var(--mono)' } }, modal.plugin.latest)
           ) : null,
           e('div', { className: 'modal-risk-badge', style: {
