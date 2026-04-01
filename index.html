@@ -9,9 +9,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#05090d;--surface:#0b1320;--surface2:#101d2e;--border:#192940;--border2:#1f3450;--accent:#06cfe0;--accent-d:rgba(6,207,224,.10);--accent-g:rgba(6,207,224,.22);--green:#1bd97a;--amber:#f5a623;--red:#ff4455;--t1:#e0ecf8;--t2:#7ba3c0;--t3:#3d6482;--mono:'DM Mono','Courier New',monospace;--display:'Syne','Hiragino Kaku Gothic ProN',sans-serif}
+:root{--bg:#05090d;--surface:#0b1320;--surface2:#101d2e;--border:#192940;--accent:#06cfe0;--accent-d:rgba(6,207,224,.10);--accent-g:rgba(6,207,224,.22);--green:#1bd97a;--amber:#f5a623;--red:#ff4455;--t1:#e0ecf8;--t2:#7ba3c0;--t3:#3d6482;--mono:'DM Mono','Courier New',monospace;--display:'Syne','Hiragino Kaku Gothic ProN',sans-serif}
 html,body,#root{min-height:100vh;background:var(--bg);color:var(--t1);font-family:var(--display);font-size:14px}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:#1f3450;border-radius:2px}
 .setup{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(6,207,224,.06) 0%,transparent 60%)}
 .setup-card{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px}
 .logo-wrap{text-align:center;margin-bottom:32px}
@@ -85,14 +85,6 @@ html,body,#root{min-height:100vh;background:var(--bg);color:var(--t1);font-famil
 .upd-btn.analyzing{color:var(--accent);border-color:rgba(6,207,224,.3);background:var(--accent-d);animation:blink 1s ease infinite}
 .upd-btn.updating{color:var(--accent);border-color:rgba(6,207,224,.3);background:var(--accent-d);animation:blink 1s ease infinite}
 .upd-btn.done{color:var(--green);border-color:rgba(27,217,122,.3);background:rgba(27,217,122,.08);cursor:default}
-.ai-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px}
-.ai-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.ai-title{font-size:13px;font-weight:800;display:flex;align-items:center;gap:8px}
-.ai-spark{color:var(--accent);font-size:15px}
-.ai-placeholder{text-align:center;padding:30px 20px;color:var(--t3);font-size:12px;line-height:1.8}
-.ai-loading{display:flex;align-items:center;gap:10px;color:var(--accent);font-size:12px;padding:18px}
-.spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
-.ai-body{font-size:12px;line-height:1.85;color:var(--t2);white-space:pre-wrap}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px;animation:overlayIn .2s ease}
 .modal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:540px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.8);animation:modalIn .25s cubic-bezier(.34,1.2,.64,1)}
 .modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border)}
@@ -123,72 +115,46 @@ html,body,#root{min-height:100vh;background:var(--bg);color:var(--t1);font-famil
 const {useState,createElement:h}=React;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
-// ─── Vercelプロキシ経由でWordPressのAPIを叩く ────────
-// CORSを完全回避。ブラウザ→Vercel→WordPress の中継構造
-async function wpRequest(siteUrl, apiKey, path, method='GET', body=null){
-  const params = new URLSearchParams({ siteUrl, apiKey, path });
-  const opts = { method, headers:{'Content-Type':'application/json'} };
-  if(body) opts.body = JSON.stringify(body);
-  const res = await fetch(`/api/proxy?${params}`, opts);
+async function wpRequest(siteUrl,apiKey,path,method,body){
+  method=method||'GET';
+  var params=new URLSearchParams({siteUrl:siteUrl,apiKey:apiKey,path:path});
+  var opts={method:method,headers:{'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  var res=await fetch('/api/proxy?'+params,opts);
   if(!res.ok){
-    const err = await res.json().catch(()=>({}));
-    throw new Error(err.error || `HTTP ${res.status}`);
+    var err={};
+    try{err=await res.json();}catch(e){}
+    throw new Error(err.error||'HTTP '+res.status);
   }
   return res.json();
 }
 
-// ─── AIリスク分析 ─────────────────────────────────────
-async function analyzeRisk(plugin, themeFiles){
-  const fileContents = (themeFiles||[]).map(f=>`// === ${f.name} ===\n${f.content}`).join('\n\n');
-  const prompt=`WordPressカスタムテーマのPHPファイルを分析し、以下のプラグインアップデートのリスクを評価してください。
-
-【更新対象】${plugin.name}  ${plugin.current} → ${plugin.latest}
-
-【テーマPHPファイル】
-\`\`\`php
-${fileContents.slice(0,12000)||'（テーマファイルを取得できませんでした）'}
-\`\`\`
-
-回答形式（厳守）：
-1行目：RISK:高 または RISK:中 または RISK:低 のみ
-2行目以降：テーマが使用している${plugin.name}のフック・関数名、衝突リスク、修正が必要なコード箇所、推奨アクションを日本語で記述してください。`;
-
-  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
-  const json=await res.json();
-  const text=json.content?.[0]?.text||'分析の取得に失敗しました';
-  const m=text.match(/RISK:(高|中|低)/);
+async function analyzeRisk(plugin,themeFiles){
+  var fileContents=(themeFiles||[]).map(function(f){return'// === '+f.name+' ===\n'+f.content;}).join('\n\n');
+  var prompt='WordPressカスタムテーマのPHPファイルを分析し、以下のプラグインアップデートのリスクを評価してください。\n\n【更新対象】'+plugin.name+'  '+plugin.current+' → '+plugin.latest+'\n\n【テーマPHPファイル】\n```php\n'+(fileContents.slice(0,12000)||'（テーマファイルを取得できませんでした）')+'\n```\n\n回答形式（厳守）：\n1行目：RISK:高 または RISK:中 または RISK:低 のみ\n2行目以降：テーマが使用している'+plugin.name+'のフック・関数名、衝突リスク、修正が必要なコード箇所、推奨アクションを日本語で記述してください。';
+  var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
+  var json=await res.json();
+  var text=json.content&&json.content[0]?json.content[0].text:'分析の取得に失敗しました';
+  var m=text.match(/RISK:(高|中|低)/);
   return{riskLevel:m?m[1]:'中',analysis:text.replace(/^RISK:(高|中|低)\n?/,'').trim()};
 }
 
-async function analyzeAllRisks(plugins, wpUpdate, themeFiles){
-  const fileContents=(themeFiles||[]).map(f=>`// === ${f.name} ===\n${f.content}`).join('\n\n');
-  const lines=[];
-  if(wpUpdate) lines.push(`WordPress本体: ${wpUpdate.current} → ${wpUpdate.latest}`);
-  plugins.forEach(p=>lines.push(`${p.name}: ${p.current} → ${p.latest}`));
-  const prompt=`WordPressカスタムテーマのPHPファイルを分析し、以下の全アップデートを一括実行する場合の総合リスクを評価してください。
-
-【更新対象】\n${lines.map(l=>'- '+l).join('\n')}
-
-【テーマPHPファイル】
-\`\`\`php
-${fileContents.slice(0,12000)||'（テーマファイルを取得できませんでした）'}
-\`\`\`
-
-回答形式（厳守）：
-1行目：RISK:高 または RISK:中 または RISK:低 のみ（総合評価）
-2行目以降：各更新とテーマの衝突リスクを箇条書き、推奨更新順序を日本語で記述してください。`;
-
-  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
-  const json=await res.json();
-  const text=json.content?.[0]?.text||'分析の取得に失敗しました';
-  const m=text.match(/RISK:(高|中|低)/);
+async function analyzeAllRisks(plugins,wpUpdate,themeFiles){
+  var fileContents=(themeFiles||[]).map(function(f){return'// === '+f.name+' ===\n'+f.content;}).join('\n\n');
+  var lines=[];
+  if(wpUpdate) lines.push('WordPress本体: '+wpUpdate.current+' → '+wpUpdate.latest);
+  plugins.forEach(function(p){lines.push(p.name+': '+p.current+' → '+p.latest);});
+  var prompt='WordPressカスタムテーマのPHPファイルを分析し、以下の全アップデートの総合リスクを評価してください。\n\n【更新対象一覧】\n'+lines.map(function(l){return'- '+l;}).join('\n')+'\n\n【テーマPHPファイル】\n```php\n'+(fileContents.slice(0,12000)||'（テーマファイルを取得できませんでした）')+'\n```\n\n回答形式（厳守）：\n1行目：RISK:高 または RISK:中 または RISK:低 のみ（総合評価）\n2行目以降：各更新とテーマの衝突リスク、推奨更新順序を日本語で記述してください。';
+  var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})});
+  var json=await res.json();
+  var text=json.content&&json.content[0]?json.content[0].text:'分析の取得に失敗しました';
+  var m=text.match(/RISK:(高|中|低)/);
   return{riskLevel:m?m[1]:'中',analysis:text.replace(/^RISK:(高|中|低)\n?/,'').trim()};
 }
 
-// ─── UI コンポーネント ────────────────────────────────
-const SCAN_STEPS=["サイトへ接続中...","WordPress バージョンを確認中...","PHP バージョンを確認中...","プラグイン一覧を取得中...","最新バージョンを照合中...","テーマファイルを読み込み中...","レポートを生成中..."];
+var SCAN_STEPS=['サイトへ接続中...','WordPress バージョンを確認中...','PHP バージョンを確認中...','プラグイン一覧を取得中...','最新バージョンを照合中...','テーマファイルを読み込み中...','レポートを生成中...'];
 
-function Setup({form,setForm,onStart,error}){
+function Setup(props){
   return h('div',{className:'setup'},
     h('div',{className:'setup-card'},
       h('div',{className:'logo-wrap'},
@@ -196,10 +162,10 @@ function Setup({form,setForm,onStart,error}){
         h('div',{className:'logo-name'},'WP Health'),
         h('div',{className:'logo-sub'},'WordPress Maintenance Dashboard')
       ),
-      h('div',{className:'field'},h('label',null,'サイト URL'),h('input',{value:form.url,onChange:e=>setForm(p=>({...p,url:e.target.value})),placeholder:'https://your-site.com'})),
-      h('div',{className:'field'},h('label',null,'API キー'),h('input',{type:'password',value:form.apiKey,onChange:e=>setForm(p=>({...p,apiKey:e.target.value})),placeholder:'wph_xxxxxxxxxxxxxxxxxxxx'})),
-      error&&h('div',{className:'err-box'},error),
-      h('button',{className:'btn-primary',onClick:onStart},'スキャン開始'),
+      h('div',{className:'field'},h('label',null,'サイト URL'),h('input',{value:props.form.url,onChange:function(e){props.setForm(function(p){return Object.assign({},p,{url:e.target.value});});},placeholder:'https://your-site.com'})),
+      h('div',{className:'field'},h('label',null,'API キー'),h('input',{type:'password',value:props.form.apiKey,onChange:function(e){props.setForm(function(p){return Object.assign({},p,{apiKey:e.target.value});});},placeholder:'wph_xxxxxxxxxxxxxxxxxxxx'})),
+      props.error&&h('div',{className:'err-box'},props.error),
+      h('button',{className:'btn-primary',onClick:props.onStart},'スキャン開始'),
       h('div',{className:'info-box'},
         h('strong',null,'接続方法'),h('br',null),
         '① WP Health Agent プラグインをWordPressにインストール・有効化',h('br',null),
@@ -210,267 +176,304 @@ function Setup({form,setForm,onStart,error}){
   );
 }
 
-function Scanning({log}){
+function Scanning(props){
   return h('div',{className:'scanning'},
     h('div',{className:'scan-heading'},'サイトをスキャン中...'),
     h('div',{className:'scan-box'},
-      log.map((line,i)=>h('div',{key:i,className:'scan-line'},
-        h('span',{className:'scan-dot',style:{background:i===log.length-1?'var(--accent)':'var(--green)',animation:i===log.length-1?'pulse 1s ease infinite':'none'}}),
-        line
-      ))
+      props.log.map(function(line,i){
+        return h('div',{key:i,className:'scan-line'},
+          h('span',{className:'scan-dot',style:{background:i===props.log.length-1?'var(--accent)':'var(--green)',animation:i===props.log.length-1?'pulse 1s ease infinite':'none'}}),
+          line
+        );
+      })
     )
   );
 }
 
-function RiskModal({modal,onCancel}){
-  if(!modal) return null;
-  const isH=modal.riskLevel==='高',isL=modal.riskLevel==='低';
-  const rc=isH?'var(--red)':isL?'var(--green)':'var(--amber)';
-  const rb=isH?'rgba(255,68,85,.13)':isL?'rgba(27,217,122,.1)':'rgba(245,166,35,.1)';
-  const rbr=isH?'rgba(255,68,85,.35)':isL?'rgba(27,217,122,.3)':'rgba(245,166,35,.3)';
-  return h('div',{className:'modal-overlay',onClick:e=>{if(e.target===e.currentTarget)onCancel()}},
+function RiskModal(props){
+  if(!props.modal) return null;
+  var modal=props.modal;
+  var isH=modal.riskLevel==='高',isL=modal.riskLevel==='低';
+  var rc=isH?'var(--red)':isL?'var(--green)':'var(--amber)';
+  var rb=isH?'rgba(255,68,85,.13)':isL?'rgba(27,217,122,.1)':'rgba(245,166,35,.1)';
+  var rbr=isH?'rgba(255,68,85,.35)':isL?'rgba(27,217,122,.3)':'rgba(245,166,35,.3)';
+  var ri=isH?'🔴':isL?'🟢':'🟡';
+  return h('div',{className:'modal-overlay',onClick:function(e){if(e.target===e.currentTarget)props.onCancel();}},
     h('div',{className:'modal-card'},
       h('div',{className:'modal-hdr'},
         h('div',{style:{display:'flex',alignItems:'center',gap:8}},h('span',null,'🔍'),h('span',{className:'modal-title'},'更新前リスク分析')),
-        h('button',{className:'modal-close',onClick:onCancel},'×')
+        h('button',{className:'modal-close',onClick:props.onCancel},'×')
       ),
       h('div',{className:'modal-plugin-section'},
-        h('div',{className:'modal-plugin-name'},modal.isAllUpdate?`一括更新（${modal.pendingCount}件）`:modal.plugin?.name),
+        h('div',{className:'modal-plugin-name'},modal.isAllUpdate?'一括更新（'+modal.pendingCount+'件）':modal.plugin&&modal.plugin.name),
         !modal.isAllUpdate&&modal.plugin&&h('div',{className:'modal-version-flow'},
           h('span',{className:'modal-ver-old'},modal.plugin.current),
           h('span',{className:'modal-ver-arrow'},'──→'),
           h('span',{className:'modal-ver-new'},modal.plugin.latest)
         )
       ),
-      modal.isAllUpdate&&modal.allItems&&h('div',{className:'modal-all-info'},modal.allItems.map((it,i)=>h('div',{key:i},'・'+it))),
+      modal.isAllUpdate&&modal.allItems&&h('div',{className:'modal-all-info'},modal.allItems.map(function(it,i){return h('div',{key:i},'・'+it);})),
       h('div',{className:'modal-risk-wrap'},
-        h('div',{className:'modal-risk-badge',style:{background:rb,border:`1px solid ${rbr}`,color:rc}},
-          h('span',null,isH?'🔴':isL?'🟢':'🟡'),h('span',null,modal.riskLevel+'リスク')
-        )
+        h('div',{className:'modal-risk-badge',style:{background:rb,border:'1px solid '+rbr,color:rc}},h('span',null,ri),h('span',null,modal.riskLevel+'リスク'))
       ),
       h('div',{className:'modal-divider'}),
       h('div',{className:'modal-analysis'},modal.analysis),
       h('div',{className:'modal-divider'}),
       h('div',{className:'modal-footer'},
-        h('button',{className:'modal-btn-cancel',onClick:onCancel},'キャンセル'),
-        h('button',{className:`modal-btn-confirm ${isH?'danger':''}`,onClick:modal.onConfirm},
-          isH?'⚠ リスクを承知で更新する':'内容を確認した上で更新する →'
-        )
+        h('button',{className:'modal-btn-cancel',onClick:props.onCancel},'キャンセル'),
+        h('button',{className:'modal-btn-confirm'+(isH?' danger':''),onClick:modal.onConfirm},isH?'⚠ リスクを承知で更新する':'内容を確認した上で更新する →')
       )
     )
   );
 }
 
-const scoreColor=s=>s>=80?'var(--green)':s>=55?'var(--amber)':'var(--red)';
-const scoreLabel=s=>s>=80?'良好':s>=55?'要対応':'緊急';
+function scoreColor(s){return s>=80?'var(--green)':s>=55?'var(--amber)':'var(--red)';}
+function scoreLabel(s){return s>=80?'良好':s>=55?'要対応':'緊急';}
 
-function HealthScore({score}){
-  const c=scoreColor(score);
+function HealthScore(props){
+  var c=scoreColor(props.score);
   return h('div',{className:'score-bar'},
-    h('div',{className:'score-num',style:{color:c}},score),
-    h('div',{className:'score-track'},h('div',{className:'score-fill',style:{width:`${score}%`,background:c}})),
-    h('div',{className:'score-label'},'健康スコア ',h('strong',{style:{color:c}},scoreLabel(score)))
+    h('div',{className:'score-num',style:{color:c}},props.score),
+    h('div',{className:'score-track'},h('div',{className:'score-fill',style:{width:props.score+'%',background:c}})),
+    h('div',{className:'score-label'},'健康スコア ',h('strong',{style:{color:c}},scoreLabel(props.score)))
   );
 }
 
-function WpCard({data,state,onInitiate}){
-  const need=data.wordpress.updateAvailable&&state!=='done';
-  const c=need?'var(--amber)':'var(--green)';
-  const lbl={idle:`→ ${data.wordpress.latest} へ更新`,analyzing:'リスク分析中...',updating:'更新中...',done:'✓ 完了'}[state];
+function WpCard(props){
+  var need=props.data.wordpress.updateAvailable&&props.state!=='done';
+  var c=need?'var(--amber)':'var(--green)';
+  var lblMap={idle:'→ '+props.data.wordpress.latest+' へ更新',analyzing:'リスク分析中...',updating:'更新中...',done:'✓ 完了'};
+  var lbl=lblMap[props.state]||'更新する';
   return h('div',{className:'scard',style:{'--c':c}},
     h('div',{className:'scard-label'},'WordPress Core'),
-    h('div',{className:'scard-ver'},data.wordpress.current),
-    h('div',{className:'scard-sub'},`最新: ${data.wordpress.latest}`),
+    h('div',{className:'scard-ver'},props.data.wordpress.current),
+    h('div',{className:'scard-sub'},'最新: '+props.data.wordpress.latest),
     need?h('span',{className:'badge amber'},'⬆ 更新あり'):h('span',{className:'badge green'},'✓ 最新'),
-    need&&h('button',{className:`scard-btn ${state!=='idle'?state:''}`,onClick:onInitiate,disabled:state!=='idle'},lbl)
+    need&&h('button',{className:'scard-btn'+(props.state!=='idle'?' '+props.state:''),onClick:props.onInitiate,disabled:props.state!=='idle'},lbl)
   );
 }
 
-function PhpCard({data}){
-  const eol=data.php.status==='eol';
+function PhpCard(props){
+  var eol=props.data.php.status==='eol';
   return h('div',{className:'scard',style:{'--c':eol?'var(--red)':'var(--green)'}},
     h('div',{className:'scard-label'},'PHP バージョン'),
-    h('div',{className:'scard-ver'},data.php.current),
-    h('div',{className:'scard-sub'},`推奨: ${data.php.recommended} 以上`),
+    h('div',{className:'scard-ver'},props.data.php.current),
+    h('div',{className:'scard-sub'},'推奨: '+props.data.php.recommended+' 以上'),
     eol?h('span',{className:'badge red'},'⚠ EOL・危険'):h('span',{className:'badge green'},'✓ 正常'),
     eol&&h('div',{style:{marginTop:10,fontSize:11,color:'var(--red)',lineHeight:1.6}},'PHP 7.4 は 2022年11月にサポート終了済みです。サーバー管理者にアップグレードを依頼してください。')
   );
 }
 
-function PluginsCard({data}){
-  const p=data.plugins.filter(x=>x.updateAvailable).length;
-  const c=p===0?'var(--green)':p<=2?'var(--amber)':'var(--red)';
+function PluginsCard(props){
+  var p=props.data.plugins.filter(function(x){return x.updateAvailable;}).length;
+  var c=p===0?'var(--green)':p<=2?'var(--amber)':'var(--red)';
   return h('div',{className:'scard',style:{'--c':c}},
     h('div',{className:'scard-label'},'プラグイン'),
-    h('div',{className:'scard-ver'},data.plugins.length,h('span',{style:{fontSize:14,color:'var(--t2)',marginLeft:4}},'個')),
-    h('div',{className:'scard-sub'},`更新待ち: ${p}個 / アクティブ: ${data.plugins.filter(x=>x.active).length}個`),
-    p===0?h('span',{className:'badge green'},'✓ すべて最新'):h('span',{className:'badge red'},`${p}件 要更新`)
+    h('div',{className:'scard-ver'},props.data.plugins.length,h('span',{style:{fontSize:14,color:'var(--t2)',marginLeft:4}},'個')),
+    h('div',{className:'scard-sub'},'更新待ち: '+p+'個 / アクティブ: '+props.data.plugins.filter(function(x){return x.active;}).length+'個'),
+    p===0?h('span',{className:'badge green'},'✓ すべて最新'):h('span',{className:'badge red'},p+'件 要更新')
   );
 }
 
-function PluginRow({plugin,state,onInitiate}){
-  const isActive=plugin.updateAvailable&&state!=='done';
-  const lbl={idle:'分析して更新',analyzing:'分析中...',updating:'更新中...',done:'✓ 完了'}[state]||'分析して更新';
-  const cls=`upd-btn ${['analyzing','updating'].includes(state)?state:state==='done'?'done':''}`;
+function PluginRow(props){
+  var plugin=props.plugin,state=props.state;
+  var isActive=plugin.updateAvailable&&state!=='done';
+  var lblMap={idle:'分析して更新',analyzing:'分析中...',updating:'更新中...',done:'✓ 完了'};
+  var lbl=lblMap[state]||'分析して更新';
+  var busy=state==='analyzing'||state==='updating';
+  var cls='upd-btn'+(busy?' '+state:state==='done'?' done':'');
   return h('div',{className:'prow'},
     h('div',{className:'pname'},plugin.name,!plugin.active&&h('span',{className:'inactive-tag'},'無効')),
     h('div',{className:'pver'},plugin.current),
     h('div',null,isActive?h('span',{className:'pver-new'},plugin.latest):h('span',{className:'pver-ok'},plugin.latest)),
     h('div',null,isActive?h('span',{className:'badge amber'},'要更新'):h('span',{className:'badge green'},'最新')),
-    h('div',null,(isActive||['analyzing','updating'].includes(state))
-      ?h('button',{className:cls,onClick:onInitiate,disabled:state!=='idle'},lbl)
-      :h('button',{className:'upd-btn done',disabled:true},'✓ 完了')
-    )
+    h('div',null,(isActive||busy)?h('button',{className:cls,onClick:props.onInitiate,disabled:state!=='idle'},lbl):h('button',{className:'upd-btn done',disabled:true},'✓ 完了'))
   );
 }
 
-// ─── メインApp ────────────────────────────────────────
 function App(){
-  const[phase,setPhase]=useState('setup');
-  const[form,setForm]=useState({url:'',apiKey:''});
-  const[scanLog,setScanLog]=useState([]);
-  const[data,setData]=useState(null);
-  const[themeFiles,setThemeFiles]=useState([]);
-  const[pstate,setPstate]=useState({});
-  const[coreState,setCoreState]=useState('idle');
-  const[modal,setModal]=useState(null);
-  const[aAll,setAAll]=useState(false);
-  const[toast,setToast]=useState(null);
-  const[conn,setConn]=useState(null);
-  const[scanErr,setScanErr]=useState(null);
+  var s=useState,phase=s('setup'),form=s({url:'',apiKey:''}),scanLog=s([]),data=s(null),themeFiles=s([]);
+  var pstate=s({}),coreState=s('idle'),modal=s(null),toast=s(null),aAll=s(false),conn=s(null),scanErr=s(null);
+  phase=phase;form=form;scanLog=scanLog;data=data;themeFiles=themeFiles;
+  pstate=pstate;coreState=coreState;modal=modal;toast=toast;aAll=aAll;conn=conn;scanErr=scanErr;
 
-  const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),3200)};
+  var setPhase=phase[1],getPhase=phase[0];
+  var setForm=form[1],getForm=form[0];
+  var setScanLog=scanLog[1],getScanLog=scanLog[0];
+  var setData=data[1],getData=data[0];
+  var setThemeFiles=themeFiles[1],getThemeFiles=themeFiles[0];
+  var setPstate=pstate[1],getPstate=pstate[0];
+  var setCoreState=coreState[1],getCoreState=coreState[0];
+  var setModal=modal[1],getModal=modal[0];
+  var setToast=toast[1],getToast=toast[0];
+  var setAAll=aAll[1],getAAll=aAll[0];
+  var setConn=conn[1],getConn=conn[0];
+  var setScanErr=scanErr[1],getScanErr=scanErr[0];
 
-  const scan=async()=>{
+  function showToast(msg){setToast(msg);setTimeout(function(){setToast(null);},3200);}
+
+  function scan(){
     setScanErr(null);
-    if(!form.url||!form.apiKey){setScanErr('URLとAPIキーを入力してください');return;}
-    const siteUrl=form.url.replace(/\/$/,'');
-    setPhase('scanning');setScanLog([]);setPstate({});setCoreState('idle');setAi({loading:false,text:null});
-    setConn({url:siteUrl,apiKey:form.apiKey});
+    var f=getForm();
+    if(!f.url||!f.apiKey){setScanErr('URLとAPIキーを入力してください');return;}
+    var siteUrl=f.url.replace(/\/$/,'');
+    setPhase('scanning');setScanLog([]);setPstate({});setCoreState('idle');
+    setConn({url:siteUrl,apiKey:f.apiKey});
 
-    for(const s of SCAN_STEPS.slice(0,4)){await sleep(300+Math.random()*200);setScanLog(p=>[...p,s]);}
+    var steps=SCAN_STEPS;
+    var i=0;
+    function nextStep(){
+      if(i<4){
+        setTimeout(function(){
+          setScanLog(function(p){return p.concat([steps[i]]);});
+          i++;nextStep();
+        },350+Math.random()*250);
+      } else {
+        doFetch(siteUrl,f.apiKey);
+      }
+    }
+    nextStep();
+  }
 
-    let siteData,files=[];
-    try{
-      siteData=await wpRequest(siteUrl,form.apiKey,'/status');
-      setScanLog(p=>[...p,SCAN_STEPS[4]]);
-      await sleep(300);
-      try{
-        const tf=await wpRequest(siteUrl,form.apiKey,'/theme-files');
-        files=tf.files||[];
-      }catch{}
-      setScanLog(p=>[...p,SCAN_STEPS[5],SCAN_STEPS[6]]);
-    }catch(e){
+  function doFetch(siteUrl,apiKey){
+    wpRequest(siteUrl,apiKey,'/status').then(function(siteData){
+      setScanLog(function(p){return p.concat([SCAN_STEPS[4]]);});
+      return wpRequest(siteUrl,apiKey,'/theme-files').then(function(tf){
+        setScanLog(function(p){return p.concat([SCAN_STEPS[5],SCAN_STEPS[6]]);});
+        setThemeFiles(tf.files||[]);
+      }).catch(function(){
+        setScanLog(function(p){return p.concat([SCAN_STEPS[5],SCAN_STEPS[6]]);});
+      }).then(function(){
+        setTimeout(function(){setData(siteData);setPhase('dashboard');},400);
+      });
+    }).catch(function(e){
       setPhase('setup');
-      setScanErr(`接続できませんでした。\n・URLが正しいか確認（例: https://your-site.com）\n・プラグインが有効化されているか確認\n・APIキーが正しいか確認\n\nエラー: ${e.message}`);
-      return;
-    }
+      setScanErr('接続できませんでした。\n・URLが正しいか確認（例: https://your-site.com）\n・プラグインが有効化されているか確認\n・APIキーが正しいか確認\n\nエラー: '+e.message);
+    });
+  }
 
-    await sleep(400);
-    setData(siteData);setThemeFiles(files);setPhase('dashboard');
-  };
+  function exPlugin(slug){
+    var c=getConn();
+    setPstate(function(p){var n=Object.assign({},p);n[slug]='updating';return n;});
+    wpRequest(c.url,c.apiKey,'/update/plugin','POST',{slug:slug}).then(function(){
+      setData(function(p){return Object.assign({},p,{plugins:p.plugins.map(function(x){return x.slug===slug?Object.assign({},x,{current:x.latest,updateAvailable:false}):x;})});});
+      setPstate(function(p){var n=Object.assign({},p);n[slug]='done';return n;});
+      var name='';getData()&&getData().plugins.forEach(function(x){if(x.slug===slug)name=x.name;});
+      showToast('✓ '+name+' を更新しました');
+    }).catch(function(e){
+      setPstate(function(p){var n=Object.assign({},p);n[slug]='idle';return n;});
+      showToast('❌ 更新失敗: '+e.message);
+    });
+  }
 
-  const exPlugin=async(slug)=>{
-    setPstate(p=>({...p,[slug]:'updating'}));
-    try{
-      await wpRequest(conn.url,conn.apiKey,'/update/plugin','POST',{slug});
-      setData(p=>({...p,plugins:p.plugins.map(x=>x.slug===slug?{...x,current:x.latest,updateAvailable:false}:x)}));
-      setPstate(p=>({...p,[slug]:'done'}));
-      showToast(`✓ ${data.plugins.find(x=>x.slug===slug)?.name} を更新しました`);
-    }catch(e){
-      setPstate(p=>({...p,[slug]:'idle'}));
-      showToast(`❌ 更新失敗: ${e.message}`);
-    }
-  };
-
-  const exCore=async()=>{
+  function exCore(){
+    var c=getConn();
     setCoreState('updating');
-    try{
-      await wpRequest(conn.url,conn.apiKey,'/update/core','POST');
-      setData(p=>({...p,wordpress:{...p.wordpress,current:p.wordpress.latest,updateAvailable:false}}));
+    wpRequest(c.url,c.apiKey,'/update/core','POST').then(function(){
+      setData(function(p){return Object.assign({},p,{wordpress:Object.assign({},p.wordpress,{current:p.wordpress.latest,updateAvailable:false})});});
       setCoreState('done');
       showToast('✓ WordPress を更新しました');
-    }catch(e){
+    }).catch(function(e){
       setCoreState('idle');
-      showToast(`❌ 更新失敗: ${e.message}`);
-    }
-  };
+      showToast('❌ 更新失敗: '+e.message);
+    });
+  }
 
-  const initPlugin=async slug=>{
-    setPstate(p=>({...p,[slug]:'analyzing'}));
-    const plugin=data.plugins.find(x=>x.slug===slug);
-    try{
-      const{riskLevel,analysis}=await analyzeRisk(plugin,themeFiles);
-      setModal({plugin,riskLevel,analysis,onConfirm:()=>{setModal(null);exPlugin(slug);}});
-    }catch{
-      setModal({plugin,riskLevel:'中',analysis:'リスク分析の取得に失敗しました。\nテスト環境での確認を推奨します。',onConfirm:()=>{setModal(null);exPlugin(slug);}});
-    }
-    setPstate(p=>({...p,[slug]:'idle'}));
-  };
+  function initPlugin(slug){
+    setPstate(function(p){var n=Object.assign({},p);n[slug]='analyzing';return n;});
+    var plugin=getData().plugins.find(function(x){return x.slug===slug;});
+    analyzeRisk(plugin,getThemeFiles()).then(function(r){
+      setModal({plugin:plugin,riskLevel:r.riskLevel,analysis:r.analysis,onConfirm:function(){setModal(null);exPlugin(slug);}});
+    }).catch(function(){
+      setModal({plugin:plugin,riskLevel:'中',analysis:'リスク分析の取得に失敗しました。\nテスト環境での確認を推奨します。',onConfirm:function(){setModal(null);exPlugin(slug);}});
+    }).finally(function(){
+      setPstate(function(p){var n=Object.assign({},p);n[slug]='idle';return n;});
+    });
+  }
 
-  const initCore=async()=>{
+  function initCore(){
     setCoreState('analyzing');
-    const fp={name:'WordPress 本体',current:data.wordpress.current,latest:data.wordpress.latest};
-    try{
-      const{riskLevel,analysis}=await analyzeRisk(fp,themeFiles);
-      setModal({plugin:fp,riskLevel,analysis,onConfirm:()=>{setModal(null);exCore();}});
-    }catch{
-      setModal({plugin:fp,riskLevel:'中',analysis:'リスク分析の取得に失敗しました。バックアップ後に更新することを推奨します。',onConfirm:()=>{setModal(null);exCore();}});
-    }
-    setCoreState('idle');
-  };
+    var d=getData();
+    var fp={name:'WordPress 本体',current:d.wordpress.current,latest:d.wordpress.latest};
+    analyzeRisk(fp,getThemeFiles()).then(function(r){
+      setModal({plugin:fp,riskLevel:r.riskLevel,analysis:r.analysis,onConfirm:function(){setModal(null);exCore();}});
+    }).catch(function(){
+      setModal({plugin:fp,riskLevel:'中',analysis:'リスク分析の取得に失敗しました。バックアップ後に更新することを推奨します。',onConfirm:function(){setModal(null);exCore();}});
+    }).finally(function(){setCoreState('idle');});
+  }
 
-  const initAll=async()=>{
+  function initAll(){
     setAAll(true);
-    const pp=data.plugins.filter(x=>x.updateAvailable);
-    const pc=data.wordpress.updateAvailable&&coreState!=='done';
-    const items=[];
-    if(pc) items.push(`WordPress 本体: ${data.wordpress.current} → ${data.wordpress.latest}`);
-    pp.forEach(p=>items.push(`${p.name}: ${p.current} → ${p.latest}`));
-    try{
-      const{riskLevel,analysis}=await analyzeAllRisks(pp,pc?data.wordpress:null,themeFiles);
-      setModal({isAllUpdate:true,pendingCount:items.length,allItems:items,riskLevel,analysis,
-        onConfirm:async()=>{setModal(null);if(pc)await exCore();for(const p of pp)await exPlugin(p.slug);showToast('🎉 すべての更新が完了しました！');}
+    var d=getData();
+    var pp=d.plugins.filter(function(x){return x.updateAvailable;});
+    var pc=d.wordpress.updateAvailable&&getCoreState()!=='done';
+    var items=[];
+    if(pc) items.push('WordPress 本体: '+d.wordpress.current+' → '+d.wordpress.latest);
+    pp.forEach(function(p){items.push(p.name+': '+p.current+' → '+p.latest);});
+    analyzeAllRisks(pp,pc?d.wordpress:null,getThemeFiles()).then(function(r){
+      setModal({isAllUpdate:true,pendingCount:items.length,allItems:items,riskLevel:r.riskLevel,analysis:r.analysis,
+        onConfirm:function(){
+          setModal(null);
+          var chain=pc?exCore():Promise.resolve();
+          pp.reduce(function(p,pl){return p.then(function(){return exPlugin(pl.slug);});},Promise.resolve(chain));
+          showToast('🎉 すべての更新が完了しました！');
+        }
       });
-    }catch{
+    }).catch(function(){
       setModal({isAllUpdate:true,pendingCount:items.length,allItems:items,riskLevel:'中',
         analysis:'一括リスク分析の取得に失敗しました。',
-        onConfirm:async()=>{setModal(null);if(pc)await exCore();for(const p of pp)await exPlugin(p.slug);}
+        onConfirm:function(){setModal(null);}
       });
-    }
-    setAAll(false);
-  };
+    }).finally(function(){setAAll(false);});
+  }
 
-  const calcScore=d=>{if(!d)return 0;let s=100;if(d.php.status==='eol')s-=35;if(d.wordpress.updateAvailable)s-=20;s-=d.plugins.filter(p=>p.updateAvailable).length*7;return Math.max(s,0);};
+  function calcScore(d){
+    if(!d)return 0;
+    var s=100;
+    if(d.php.status==='eol')s-=35;
+    if(d.wordpress.updateAvailable)s-=20;
+    s-=d.plugins.filter(function(p){return p.updateAvailable;}).length*7;
+    return Math.max(s,0);
+  }
 
-  if(phase==='setup') return h(Setup,{form,setForm,onStart:scan,error:scanErr});
-  if(phase==='scanning') return h(Scanning,{log:scanLog});
+  if(getPhase()==='setup') return h(Setup,{form:getForm(),setForm:setForm,onStart:scan,error:getScanErr()});
+  if(getPhase()==='scanning') return h(Scanning,{log:getScanLog()});
 
-  const score=calcScore(data);
-  const tot=(data.wordpress.updateAvailable&&coreState!=='done'?1:0)+data.plugins.filter(p=>p.updateAvailable&&pstate[p.slug]!=='done').length;
+  var d=getData();
+  var score=calcScore(d);
+  var ps=getPstate();
+  var tot=(d.wordpress.updateAvailable&&getCoreState()!=='done'?1:0)+d.plugins.filter(function(p){return p.updateAvailable&&ps[p.slug]!=='done';}).length;
 
   return h('div',{className:'dash'},
     h('header',{className:'hdr'},
       h('span',{className:'hdr-logo'},'WP Health'),
       h('span',{className:'hdr-sep'}),
-      h('span',{className:'hdr-url'},data.site?.url||conn?.url),
+      h('span',{className:'hdr-url'},d.site&&d.site.url||getConn()&&getConn().url),
       h('span',{className:'hdr-time'},'スキャン: ',new Date().toLocaleTimeString('ja-JP')),
-      h('button',{className:'btn-sm',onClick:()=>setPhase('setup')},'← 設定'),
+      h('button',{className:'btn-sm',onClick:function(){setPhase('setup');}},'← 設定'),
       h('button',{className:'btn-sm',onClick:scan},'再スキャン'),
-      tot>0&&h('button',{className:'btn-accent',onClick:initAll,disabled:aAll},aAll?'一括分析中...':`一括リスク分析 + 更新 (${tot}件)`)
+      tot>0&&h('button',{className:'btn-accent',onClick:initAll,disabled:getAAll()},getAAll()?'一括分析中...':'一括リスク分析 + 更新 ('+tot+'件)')
     ),
     h('div',{className:'content'},
-      h(HealthScore,{score}),
-      h('div',{className:'summary-row'},h(WpCard,{data,state:coreState,onInitiate:initCore}),h(PhpCard,{data}),h(PluginsCard,{data})),
-      h('div',{className:'section-hdr'},h('span',{className:'section-title'},'インストール済みプラグイン'),h('span',{className:'section-sub'},`${data.plugins.filter(p=>p.updateAvailable).length}件の更新待ち / 全${data.plugins.length}個`)),
+      h(HealthScore,{score:score}),
+      h('div',{className:'summary-row'},
+        h(WpCard,{data:d,state:getCoreState(),onInitiate:initCore}),
+        h(PhpCard,{data:d}),
+        h(PluginsCard,{data:d})
+      ),
+      h('div',{className:'section-hdr'},
+        h('span',{className:'section-title'},'インストール済みプラグイン'),
+        h('span',{className:'section-sub'},d.plugins.filter(function(p){return p.updateAvailable;}).length+'件の更新待ち / 全'+d.plugins.length+'個')
+      ),
       h('div',{className:'ptable'},
         h('div',{className:'pthead'},h('span',null,'プラグイン名'),h('span',null,'現在'),h('span',null,'最新'),h('span',null,'状態'),h('span',null,'')),
-        data.plugins.map(plugin=>h(PluginRow,{key:plugin.slug,plugin,state:pstate[plugin.slug]||'idle',onInitiate:()=>initPlugin(plugin.slug)}))
-      ),
-
+        d.plugins.map(function(plugin){
+          return h(PluginRow,{key:plugin.slug,plugin:plugin,state:ps[plugin.slug]||'idle',onInitiate:function(){initPlugin(plugin.slug);}});
+        })
+      )
     ),
-    h(RiskModal,{modal,onCancel:()=>setModal(null)}),
-    toast&&h('div',{className:'toast'},toast)
+    h(RiskModal,{modal:getModal(),onCancel:function(){setModal(null);}}),
+    getToast()&&h('div',{className:'toast'},getToast())
   );
 }
 
