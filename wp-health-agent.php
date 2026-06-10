@@ -17,12 +17,7 @@ define('WPHA_NS',         'wp-health/v1');
 add_action('init', function () {
     // OPTIONSプリフライトリクエストはここで即座に返す
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-        if (isset($_SERVER['HTTP_ORIGIN'])) {
-            header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN']);
-        } else {
-            header('Access-Control-Allow-Origin: *');
-        }
-        header('Access-Control-Allow-Credentials: true');
+        header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Headers: Content-Type, X-WPH-Key, Authorization');
         header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
         header('Access-Control-Max-Age: 86400');
@@ -32,12 +27,7 @@ add_action('init', function () {
 });
 
 add_filter('rest_pre_serve_request', function ($served, $result, $request, $server) {
-    if (isset($_SERVER['HTTP_ORIGIN'])) {
-        header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN']);
-    } else {
-        header('Access-Control-Allow-Origin: *');
-    }
-    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Headers: Content-Type, X-WPH-Key, Authorization');
     header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
     return $served;
