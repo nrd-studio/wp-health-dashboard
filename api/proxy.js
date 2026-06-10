@@ -12,7 +12,9 @@ function validateSiteUrl(raw) {
 }
 
 export default async function handler(req, res) {
-    const { siteUrl, apiKey, path } = req.query;
+    const { siteUrl, path } = req.query;
+    // ヘッダ優先（URLログへのキー残留対策）、クエリは後方互換
+    const apiKey = req.headers['x-wph-key'] || req.query.apiKey;
 
     const origin = validateSiteUrl(siteUrl);
     if (!origin) {
@@ -20,6 +22,9 @@ export default async function handler(req, res) {
     }
     if (!VALID_PATH.test(path)) {
         return res.status(400).json({ error: '無効な path です' });
+    }
+    if (!apiKey) {
+        return res.status(400).json({ error: 'APIキーがありません（X-WPH-Key ヘッダ）' });
     }
 
     const body = req.method === 'POST' ? JSON.stringify(req.body) : null;
@@ -37,6 +42,13 @@ export default async function handler(req, res) {
                 ...(body ? { body } : {}),
             }
         );
+        // リダイレクト応答はJSONを持たないため明示的にエラー化（www有無・https正規化のミス検出用）
+        if (response.status >= 300 && response.status < 400) {
+            return res.status(502).json({
+                error: 'サイトがリダイレクトを返しました。siteUrl を最終的なURL（www有無・httpsを正確に）で入力してください。',
+                location: response.headers.get('location') || '',
+            });
+        }
         const data = await response.json();
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.status(response.status).json(data);
